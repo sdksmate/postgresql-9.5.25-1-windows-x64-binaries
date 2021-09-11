@@ -1,0 +1,684 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.23</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.24"
+HREF="release-9-5-24.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.22"
+HREF="release-9-5-22.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.24"
+HREF="release-9-5-24.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.22"
+HREF="release-9-5-22.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-23"
+>E.3. Release 9.5.23</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2020-08-13</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.22.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><P
+>   The <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> community will stop
+   releasing updates for the 9.5.X release series in February 2021.
+   Users are encouraged to update to a newer release branch soon.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127650"
+>E.3.1. Migration to Version 9.5.23</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.20,
+    see <A
+HREF="release-9-5-20.html"
+>Section E.6</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127655"
+>E.3.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Make contrib modules' installation scripts more secure (Tom Lane)
+     </P
+><P
+>      Attacks similar to those described in CVE-2018-1058 could be carried
+      out against an extension installation script, if the attacker can
+      create objects in either the extension's target schema or the schema
+      of some prerequisite extension.  Since extensions often require
+      superuser privilege to install, this can open a path to obtaining
+      superuser privilege.  To mitigate this risk, be more careful about
+      the <TT
+CLASS="VARNAME"
+>search_path</TT
+> used to run an installation
+      script; disable <TT
+CLASS="VARNAME"
+>check_function_bodies</TT
+> within the
+      script; and fix catalog-adjustment queries used in some contrib
+      modules to ensure they are secure.  Also provide documentation to
+      help third-party extension authors make their installation scripts
+      secure.  This is not a complete solution; extensions that depend on
+      other extensions can still be at risk if installed carelessly.
+      (CVE-2020-14350)
+     </P
+></LI
+><LI
+><P
+>      In logical replication walsender, fix failure to send feedback
+      messages after sending a keepalive message (&Aacute;lvaro Herrera)
+     </P
+><P
+>      This is a relatively minor problem when using built-in logical
+      replication, because the built-in walreceiver will send a feedback
+      reply (which clears the incorrect state) fairly frequently anyway.
+      But with some other replication systems, such
+      as <SPAN
+CLASS="APPLICATION"
+>pglogical</SPAN
+>, it causes significant
+      performance issues.
+     </P
+></LI
+><LI
+><P
+>      Ensure the <CODE
+CLASS="FUNCTION"
+>repeat()</CODE
+> function can be interrupted
+      by query cancel (Joe Conway)
+     </P
+></LI
+><LI
+><P
+>      Undo double-quoting of index names in <TT
+CLASS="COMMAND"
+>EXPLAIN</TT
+>'s
+      non-text output formats (Tom Lane, Euler Taveira)
+     </P
+></LI
+><LI
+><P
+>      Fix timing of constraint revalidation in <TT
+CLASS="COMMAND"
+>ALTER
+      TABLE</TT
+> (David Rowley)
+     </P
+><P
+>      If <TT
+CLASS="COMMAND"
+>ALTER TABLE</TT
+> needs to fully rewrite the table's
+      contents (for example, due to change of a column's data type) and
+      also needs to scan the table to re-validate foreign keys
+      or <TT
+CLASS="LITERAL"
+>CHECK</TT
+> constraints, it sometimes did things in
+      the wrong order, leading to odd errors such as <SPAN
+CLASS="QUOTE"
+>"could not read
+      block 0 in file "base/nnnnn/nnnnn": read only 0 of 8192 bytes"</SPAN
+>.
+     </P
+></LI
+><LI
+><P
+>      Cope with <TT
+CLASS="LITERAL"
+>LATERAL</TT
+> references in restriction
+      clauses attached to an un-flattened sub-<TT
+CLASS="LITERAL"
+>SELECT</TT
+> in
+      the <TT
+CLASS="LITERAL"
+>FROM</TT
+> clause (Tom Lane)
+     </P
+><P
+>      This oversight could result in assertion failures or crashes at
+      query execution.
+     </P
+></LI
+><LI
+><P
+>      Avoid believing that a never-analyzed foreign table has zero tuples
+      (Tom Lane)
+     </P
+><P
+>      This primarily affected the planner's estimate of the number of
+      groups that would be obtained by <TT
+CLASS="LITERAL"
+>GROUP BY</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Improve error handling in the server's <TT
+CLASS="FILENAME"
+>buffile</TT
+>
+      module (Thomas Munro)
+     </P
+><P
+>      Fix some cases where I/O errors were indistinguishable from reaching
+      EOF, or were not reported at all.  Also add details such as block
+      numbers and byte counts where appropriate.
+     </P
+></LI
+><LI
+><P
+>      Fix conflict-checking anomalies in <TT
+CLASS="LITERAL"
+>SERIALIZABLE</TT
+>
+      isolation mode (Peter Geoghegan)
+     </P
+><P
+>      If a concurrently-inserted tuple was updated by a different
+      concurrent transaction, and neither tuple version was visible to the
+      current transaction's snapshot, serialization conflict checking
+      could draw the wrong conclusions about whether the tuple was relevant
+      to the results of the current transaction.  This could allow a
+      serializable transaction to commit when it should have failed with a
+      serialization error.
+     </P
+></LI
+><LI
+><P
+>      Avoid repeated marking of dead btree index entries as dead (Masahiko
+      Sawada)
+     </P
+><P
+>      While functionally harmless, this led to useless WAL traffic when
+      checksums are enabled or <TT
+CLASS="VARNAME"
+>wal_log_hints</TT
+> is on.
+     </P
+></LI
+><LI
+><P
+>      Fix failure of some code paths to acquire the correct lock before
+      modifying <TT
+CLASS="FILENAME"
+>pg_control</TT
+> (Nathan Bossart, Fujii
+      Masao)
+     </P
+><P
+>      This oversight could allow <TT
+CLASS="FILENAME"
+>pg_control</TT
+> to be
+      written out with an inconsistent checksum, possibly causing trouble
+      later, including inability to restart the database if it crashed
+      before the next <TT
+CLASS="FILENAME"
+>pg_control</TT
+> update.
+     </P
+></LI
+><LI
+><P
+>      Fix errors in <CODE
+CLASS="FUNCTION"
+>currtid()</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>currtid2()</CODE
+> (Michael Paquier)
+     </P
+><P
+>      These functions (which are undocumented and used only by ancient
+      versions of the ODBC driver) contained coding errors that could
+      result in crashes, or in confusing error messages such as <SPAN
+CLASS="QUOTE"
+>"could
+      not open file"</SPAN
+> when applied to a relation having no storage.
+     </P
+></LI
+><LI
+><P
+>      Avoid calling <CODE
+CLASS="FUNCTION"
+>elog()</CODE
+>
+      or <CODE
+CLASS="FUNCTION"
+>palloc()</CODE
+> while holding a spinlock (Michael
+      Paquier, Tom Lane)
+     </P
+><P
+>      Logic associated with replication slots had several violations of
+      this coding rule.  While the odds of trouble are quite low, an error
+      in the called function would lead to a stuck spinlock.
+     </P
+></LI
+><LI
+><P
+>      Report out-of-disk-space errors properly
+      in <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>
+      and <SPAN
+CLASS="APPLICATION"
+>pg_basebackup</SPAN
+> (Justin Pryzby, Tom
+      Lane, &Aacute;lvaro Herrera)
+     </P
+><P
+>      Some code paths could produce silly reports like <SPAN
+CLASS="QUOTE"
+>"could not
+      write file: Success"</SPAN
+>.
+     </P
+></LI
+><LI
+><P
+>      Fix parallel restore of tables having both table-level privileges
+      and per-column privileges (Tom Lane)
+     </P
+><P
+>      The table-level privilege grants have to be applied first, but a
+      parallel restore did not reliably order them that way; this could
+      lead to <SPAN
+CLASS="QUOTE"
+>"tuple concurrently updated"</SPAN
+> errors, or to
+      disappearance of some per-column privilege grants.  The fix for this
+      is to include dependency links between such entries in the archive
+      file, meaning that a new dump has to be taken with a
+      corrected <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> to ensure that the
+      problem will not recur.
+     </P
+></LI
+><LI
+><P
+>      Ensure that <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> runs
+      with <TT
+CLASS="VARNAME"
+>vacuum_defer_cleanup_age</TT
+> set to zero in the
+      target cluster (Bruce Momjian)
+     </P
+><P
+>      If the target cluster's configuration has been modified to
+      set <TT
+CLASS="VARNAME"
+>vacuum_defer_cleanup_age</TT
+> to a nonzero value,
+      that prevented freezing of the system catalogs from working properly,
+      which caused the upgrade to fail in confusing ways.  Ensure that any
+      such setting is overridden for the duration of the upgrade.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_recvlogical</SPAN
+> to drain pending
+      messages before exiting (Noah Misch)
+     </P
+><P
+>      Without this, the replication sender might detect a send failure and
+      exit without making the expected final update to the replication
+      slot's LSN position.  That led to re-transmitting data after the
+      next connection.  It was also possible to miss error messages sent
+      after the last data that <SPAN
+CLASS="APPLICATION"
+>pg_recvlogical</SPAN
+>
+      wants to consume.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+>'s handling of just-deleted
+      files in the source data directory (Justin Pryzby, Michael Paquier)
+     </P
+><P
+>      When working with an on-line source database, concurrent file
+      deletions are possible, but <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+>
+      would get confused if deletion happened between seeing a file's
+      directory entry and examining it with <CODE
+CLASS="FUNCTION"
+>stat()</CODE
+>.
+     </P
+></LI
+><LI
+><P
+>      Make <SPAN
+CLASS="APPLICATION"
+>pg_test_fsync</SPAN
+> use binary I/O mode on
+      Windows (Michael Paquier)
+     </P
+><P
+>      Previously it wrote the test file in text mode, which is not an
+      accurate reflection of <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+>'s
+      actual usage.
+     </P
+></LI
+><LI
+><P
+>      Fix failure to initialize local state correctly
+      in <TT
+CLASS="FILENAME"
+>contrib/dblink</TT
+> (Joe Conway)
+     </P
+><P
+>      With the right combination of circumstances, this could lead to
+      <CODE
+CLASS="FUNCTION"
+>dblink_close()</CODE
+> issuing an unexpected
+      remote <TT
+CLASS="COMMAND"
+>COMMIT</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="FILENAME"
+>contrib/pgcrypto</TT
+>'s misuse
+      of <CODE
+CLASS="FUNCTION"
+>deflate()</CODE
+> (Tom Lane)
+     </P
+><P
+>      The <CODE
+CLASS="FUNCTION"
+>pgp_sym_encrypt</CODE
+> functions could produce
+      incorrect compressed data due to mishandling
+      of <SPAN
+CLASS="APPLICATION"
+>zlib</SPAN
+>'s API requirements.  We have no
+      reports of this error manifesting with
+      stock <SPAN
+CLASS="APPLICATION"
+>zlib</SPAN
+>, but it can be seen when using
+      IBM's <SPAN
+CLASS="APPLICATION"
+>zlibNX</SPAN
+> implementation.
+     </P
+></LI
+><LI
+><P
+>      Fix corner case in decompression logic
+      in <TT
+CLASS="FILENAME"
+>contrib/pgcrypto</TT
+>'s
+      <CODE
+CLASS="FUNCTION"
+>pgp_sym_decrypt</CODE
+> functions (Kyotaro Horiguchi,
+      Michael Paquier)
+     </P
+><P
+>      A compressed stream can validly end with an empty packet, but the
+      decompressor failed to handle this and would complain about corrupt
+      data.
+     </P
+></LI
+><LI
+><P
+>      Use POSIX-standard <CODE
+CLASS="FUNCTION"
+>strsignal()</CODE
+> in place of the
+      BSD-ish <TT
+CLASS="LITERAL"
+>sys_siglist[]</TT
+> (Tom Lane)
+     </P
+><P
+>      This avoids build failures with very recent versions
+      of <SPAN
+CLASS="APPLICATION"
+>glibc</SPAN
+>.
+     </P
+></LI
+><LI
+><P
+>      Support building our NLS code with Microsoft Visual Studio 2015 or
+      later (Juan Jos&eacute; Santamar&iacute;a Flecha, Davinder Singh,
+      Amit Kapila)
+     </P
+></LI
+><LI
+><P
+>      Avoid possible failure of our MSVC install script when there is a
+      file named <TT
+CLASS="FILENAME"
+>configure</TT
+> several levels above the
+      source code tree (Arnold M&uuml;ller)
+     </P
+><P
+>      This could confuse some logic that looked
+      for <TT
+CLASS="FILENAME"
+>configure</TT
+> to identify the top level of the
+      source tree.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-24.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-22.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.24</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.22</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,676 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.22</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.23"
+HREF="release-9-5-23.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.21"
+HREF="release-9-5-21.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.23"
+HREF="release-9-5-23.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.21"
+HREF="release-9-5-21.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-22"
+>E.4. Release 9.5.22</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2020-05-14</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.21.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><P
+>   The <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> community will stop
+   releasing updates for the 9.5.X release series in February 2021.
+   Users are encouraged to update to a newer release branch soon.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127794"
+>E.4.1. Migration to Version 9.5.22</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.20,
+    see <A
+HREF="release-9-5-20.html"
+>Section E.6</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127799"
+>E.4.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Preserve the <TT
+CLASS="STRUCTFIELD"
+>indisclustered</TT
+> setting of
+      indexes rewritten by <TT
+CLASS="COMMAND"
+>ALTER TABLE</TT
+> (Amit Langote,
+      Justin Pryzby)
+     </P
+><P
+>      Previously, <TT
+CLASS="COMMAND"
+>ALTER TABLE</TT
+> lost track of which index
+      had been used for <TT
+CLASS="COMMAND"
+>CLUSTER</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Preserve the replica identity properties of indexes rewritten
+      by <TT
+CLASS="COMMAND"
+>ALTER TABLE</TT
+> (Quan Zongliang, Peter Eisentraut)
+     </P
+></LI
+><LI
+><P
+>      Lock objects sooner during <TT
+CLASS="COMMAND"
+>DROP OWNED BY</TT
+>
+      (&Aacute;lvaro Herrera)
+     </P
+><P
+>      This avoids failures in race-condition cases where another session is
+      deleting some of the same objects.
+     </P
+></LI
+><LI
+><P
+>      Fix error-case processing for <TT
+CLASS="COMMAND"
+>CREATE ROLE ... IN
+      ROLE</TT
+> (Andrew Gierth)
+     </P
+><P
+>      Some error cases would be reported as <SPAN
+CLASS="QUOTE"
+>"unexpected node
+      type"</SPAN
+> or the like, instead of the intended message.
+     </P
+></LI
+><LI
+><P
+>      Fix bugs in <TT
+CLASS="VARNAME"
+>gin_fuzzy_search_limit</TT
+> processing
+      (Ad&eacute; Heyward, Tom Lane)
+     </P
+><P
+>      A small value of <TT
+CLASS="VARNAME"
+>gin_fuzzy_search_limit</TT
+> could
+      result in unexpected slowness due to unintentionally rescanning the
+      same index page many times.  Another code path failed to apply the
+      intended filtering at all, possibly returning too many values.
+     </P
+></LI
+><LI
+><P
+>      Allow input of type <TT
+CLASS="TYPE"
+>circle</TT
+> to accept the format
+      <SPAN
+CLASS="QUOTE"
+>"<TT
+CLASS="LITERAL"
+>(<TT
+CLASS="REPLACEABLE"
+><I
+>x</I
+></TT
+>,<TT
+CLASS="REPLACEABLE"
+><I
+>y</I
+></TT
+>),<TT
+CLASS="REPLACEABLE"
+><I
+>r</I
+></TT
+></TT
+>"</SPAN
+>
+      as the documentation says it does (David Zhang)
+     </P
+></LI
+><LI
+><P
+>      Make the <CODE
+CLASS="FUNCTION"
+>get_bit()</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>set_bit()</CODE
+> functions cope
+      with <TT
+CLASS="TYPE"
+>bytea</TT
+> strings longer than 256MB (Movead Li)
+     </P
+><P
+>      Since the bit number argument is only <TT
+CLASS="TYPE"
+>int4</TT
+>, it's
+      impossible to use these functions to access bits beyond the first
+      256MB of a long <TT
+CLASS="TYPE"
+>bytea</TT
+>.  We'll widen the argument
+      to <TT
+CLASS="TYPE"
+>int8</TT
+> in v13, but in the meantime, allow these
+      functions to work on the initial substring of a
+      long <TT
+CLASS="TYPE"
+>bytea</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Avoid possibly leaking an open-file descriptor for a directory
+      in <CODE
+CLASS="FUNCTION"
+>pg_ls_dir()</CODE
+>,
+      <CODE
+CLASS="FUNCTION"
+>pg_timezone_names()</CODE
+>,
+      <CODE
+CLASS="FUNCTION"
+>pg_tablespace_databases()</CODE
+>, and allied functions
+      (Justin Pryzby)
+     </P
+></LI
+><LI
+><P
+>      Fix polymorphic-function type resolution to correctly infer the
+      actual type of an <TT
+CLASS="TYPE"
+>anyarray</TT
+> output when given only
+      an <TT
+CLASS="TYPE"
+>anyrange</TT
+> input (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Avoid unlikely crash when <TT
+CLASS="COMMAND"
+>REINDEX</TT
+> is terminated
+      by a session-shutdown signal (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Prevent printout of possibly-incorrect hash join table statistics
+      in <TT
+CLASS="COMMAND"
+>EXPLAIN</TT
+> (Konstantin Knizhnik, Tom Lane, Thomas
+      Munro)
+     </P
+></LI
+><LI
+><P
+>      Fix reporting of elapsed time for heap truncation steps
+      in <TT
+CLASS="COMMAND"
+>VACUUM VERBOSE</TT
+> (Tatsuhito Kasahara)
+     </P
+></LI
+><LI
+><P
+>      Avoid possibly showing <SPAN
+CLASS="QUOTE"
+>"waiting"</SPAN
+> twice in a process's
+      PS status (Masahiko Sawada)
+     </P
+></LI
+><LI
+><P
+>      Avoid premature recycling of WAL segments during crash recovery
+      (Jehan-Guillaume de Rorthais)
+     </P
+><P
+>      WAL segments that become ready to be archived during crash recovery
+      were potentially recycled without being archived.
+     </P
+></LI
+><LI
+><P
+>      Avoid scanning irrelevant timelines during archive recovery (Kyotaro
+      Horiguchi)
+     </P
+><P
+>      This can eliminate many attempts to fetch non-existent WAL files from
+      archive storage, which is helpful if archive access is slow.
+     </P
+></LI
+><LI
+><P
+>      Remove bogus <SPAN
+CLASS="QUOTE"
+>"subtransaction logged without previous top-level
+      txn record"</SPAN
+> error check in logical decoding (Arseny Sher,
+      Amit Kapila)
+     </P
+><P
+>      This condition is legitimately reachable in various scenarios, so
+      remove the check.
+     </P
+></LI
+><LI
+><P
+>      Ensure that a replication
+      slot's <TT
+CLASS="LITERAL"
+>io_in_progress_lock</TT
+> is released in failure
+      code paths (Pavan Deolasee)
+     </P
+><P
+>      This could result in a walsender later becoming stuck waiting for
+      the lock.
+     </P
+></LI
+><LI
+><P
+>      Ensure <TT
+CLASS="VARNAME"
+>nextXid</TT
+> can't go backwards on a standby
+      server (Eka Palamadai)
+     </P
+><P
+>      This race condition could allow incorrect hot standby feedback
+      messages to be sent back to the primary server, potentially allowing
+      <TT
+CLASS="COMMAND"
+>VACUUM</TT
+> to run too soon on the primary.
+     </P
+></LI
+><LI
+><P
+>      Add missing SQLSTATE values to a few error reports (Sawada Masahiko)
+     </P
+></LI
+><LI
+><P
+>      Fix PL/pgSQL to reliably refuse to execute an event trigger function
+      as a plain function (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix memory leak in <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+> when
+      using <TT
+CLASS="LITERAL"
+>sslmode=verify-full</TT
+> (Roman Peshkurov)
+     </P
+><P
+>      Certificate verification during connection startup could leak some
+      memory.  This would become an issue if a client process opened many
+      database connections during its lifetime.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> to treat an argument of
+      just <SPAN
+CLASS="QUOTE"
+>"<TT
+CLASS="LITERAL"
+>-</TT
+>"</SPAN
+> as meaning <SPAN
+CLASS="QUOTE"
+>"read
+      from stdin"</SPAN
+> on all platforms (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> to dump comments on RLS
+      policy objects (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>, postpone restore of event
+      triggers till the end (Fabr&iacute;zio de Royes Mello, Hamid Akhtar,
+      Tom Lane)
+     </P
+><P
+>      This minimizes the risk that an event trigger could interfere with
+      the restoration of other objects.
+     </P
+></LI
+><LI
+><P
+>      Fix quoting of <TT
+CLASS="OPTION"
+>--encoding</TT
+>, <TT
+CLASS="OPTION"
+>--lc-ctype</TT
+>
+      and <TT
+CLASS="OPTION"
+>--lc-collate</TT
+> values
+      in <SPAN
+CLASS="APPLICATION"
+>createdb</SPAN
+> utility (Michael Paquier)
+     </P
+></LI
+><LI
+><P
+>      <TT
+CLASS="FILENAME"
+>contrib/lo</TT
+>'s <CODE
+CLASS="FUNCTION"
+>lo_manage()</CODE
+>
+      function crashed if called directly rather than as a trigger (Tom
+      Lane)
+     </P
+></LI
+><LI
+><P
+>      In <TT
+CLASS="FILENAME"
+>contrib/ltree</TT
+>,
+      protect against overflow of <TT
+CLASS="TYPE"
+>ltree</TT
+>
+      and <TT
+CLASS="TYPE"
+>lquery</TT
+> length fields (Nikita Glukhov)
+     </P
+></LI
+><LI
+><P
+>      Fix cache reference leak in <TT
+CLASS="FILENAME"
+>contrib/sepgsql</TT
+>
+      (Michael Luo)
+     </P
+></LI
+><LI
+><P
+>      Avoid failures when dealing with Unix-style locale names on
+      Windows (Juan Jos&eacute; Santamar&iacute;a Flecha)
+     </P
+></LI
+><LI
+><P
+>      In MSVC builds, cope with spaces in the path name for Python
+      (Victor Wagner)
+     </P
+></LI
+><LI
+><P
+>      In MSVC builds, fix detection of Visual Studio version to work with
+      more language settings (Andrew Dunstan)
+     </P
+></LI
+><LI
+><P
+>      In MSVC builds, use <TT
+CLASS="LITERAL"
+>-Wno-deprecated</TT
+> with bison
+      versions newer than 3.0, as non-Windows builds already do (Andrew
+      Dunstan)
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2020a for DST law changes in Morocco and the Canadian Yukon,
+      plus historical corrections for Shanghai.
+     </P
+><P
+>      The America/Godthab zone has been renamed to America/Nuuk to reflect
+      current English usage; however, the old name remains available as a
+      compatibility link.
+     </P
+><P
+>      Also, update <SPAN
+CLASS="APPLICATION"
+>initdb</SPAN
+>'s list of known
+      Windows time zone names to include recent additions, improving the
+      odds that it will correctly translate the system time zone setting
+      on that platform.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-23.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-21.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.23</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.21</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

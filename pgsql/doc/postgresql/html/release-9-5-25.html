@@ -1,0 +1,771 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.25</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.24"
+HREF="release-9-5-24.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release Notes"
+HREF="release.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.24"
+HREF="release-9-5-24.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-25"
+>E.1. Release 9.5.25</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2021-02-11</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.24.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><P
+>   This is expected to be the last <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+>
+   release in the 9.5.X series.  Users are encouraged to update to a newer
+   release branch soon.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127298"
+>E.1.1. Migration to Version 9.5.25</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, see the first changelog item below,
+    which describes cases in which reindexing indexes after the upgrade
+    may be advisable.
+   </P
+><P
+>    Also, if you are upgrading from a version earlier than 9.5.20,
+    see <A
+HREF="release-9-5-20.html"
+>Section E.6</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127304"
+>E.1.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Fix <TT
+CLASS="COMMAND"
+>CREATE INDEX CONCURRENTLY</TT
+> to wait for
+      concurrent prepared transactions (Andrey Borodin)
+     </P
+><P
+>      At the point where <TT
+CLASS="COMMAND"
+>CREATE INDEX CONCURRENTLY</TT
+>
+      waits for all concurrent transactions to complete so that it can see
+      rows they inserted, it must also wait for all prepared transactions
+      to complete, for the same reason.  Its failure to do so meant that
+      rows inserted by prepared transactions might be omitted from the new
+      index, causing queries relying on the index to miss such rows.
+      In installations that have enabled prepared transactions
+      (<TT
+CLASS="VARNAME"
+>max_prepared_transactions</TT
+> &gt; 0),
+      it's recommended to reindex any concurrently-built indexes in
+      case this problem occurred when they were built.
+     </P
+></LI
+><LI
+><P
+>      Avoid incorrect results when <TT
+CLASS="LITERAL"
+>WHERE CURRENT OF</TT
+> is
+      applied to a cursor whose plan contains a MergeAppend node (Tom
+      Lane)
+     </P
+><P
+>      This case is unsupported (in general, a cursor using <TT
+CLASS="LITERAL"
+>ORDER
+      BY</TT
+> is not guaranteed to be simply updatable); but the code
+      previously did not reject it, and could silently give false matches.
+     </P
+></LI
+><LI
+><P
+>      Fix crash when <TT
+CLASS="LITERAL"
+>WHERE CURRENT OF</TT
+> is applied to a
+      cursor whose plan contains a custom scan node (David Geier)
+     </P
+></LI
+><LI
+><P
+>      Fix planner's handling of a placeholder that is computed at some
+      join level and used only at that same level (Tom Lane)
+     </P
+><P
+>      This oversight could lead to <SPAN
+CLASS="QUOTE"
+>"failed to build
+      any <TT
+CLASS="REPLACEABLE"
+><I
+>N</I
+></TT
+>-way joins"</SPAN
+> planner errors.
+     </P
+></LI
+><LI
+><P
+>      Be more careful about whether index AMs support mark/restore
+      (Andrew Gierth)
+     </P
+><P
+>      This prevents errors about missing support functions in rare edge
+      cases.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="COMMAND"
+>ALTER DEFAULT PRIVILEGES</TT
+> to handle duplicated
+      arguments safely (Michael Paquier)
+     </P
+><P
+>      Duplicate role or schema names within the same command could lead
+      to <SPAN
+CLASS="QUOTE"
+>"tuple already updated by self"</SPAN
+> errors or
+      unique-constraint violations.
+     </P
+></LI
+><LI
+><P
+>      Flush ACL-related caches when <TT
+CLASS="STRUCTNAME"
+>pg_authid</TT
+>
+      changes (Noah Misch)
+     </P
+><P
+>      This change ensures that permissions-related decisions will promptly
+      reflect the results of <TT
+CLASS="COMMAND"
+>ALTER ROLE ... [NO] INHERIT</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Prevent misprocessing of ambiguous <TT
+CLASS="COMMAND"
+>CREATE TABLE
+      LIKE</TT
+> clauses (Tom Lane)
+     </P
+><P
+>      A <TT
+CLASS="LITERAL"
+>LIKE</TT
+> clause is re-examined after initial
+      creation of the new table, to handle importation of indexes and
+      such.  It was possible for this re-examination to find a different
+      table of the same name, causing unexpected behavior; one example is
+      where the new table is a temporary table of the same name as
+      the <TT
+CLASS="LITERAL"
+>LIKE</TT
+> target.
+     </P
+></LI
+><LI
+><P
+>      Rearrange order of operations in <TT
+CLASS="COMMAND"
+>CREATE TABLE
+      LIKE</TT
+> so that indexes are cloned before building foreign
+      key constraints (Tom Lane)
+     </P
+><P
+>      This fixes the case where a self-referential foreign key constraint
+      declared in the outer <TT
+CLASS="COMMAND"
+>CREATE TABLE</TT
+> depends on an
+      index that's coming from the <TT
+CLASS="LITERAL"
+>LIKE </TT
+> clause.
+     </P
+></LI
+><LI
+><P
+>      Disallow converting an inheritance child table to a view
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Ensure that disk space allocated for a dropped relation is released
+      promptly at commit (Thomas Munro)
+     </P
+><P
+>      Previously, if the dropped relation spanned multiple 1GB segments,
+      only the first segment was truncated immediately.  Other segments
+      were simply unlinked, which doesn't authorize the kernel to release
+      the storage so long as any other backends still have the files open.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of backslash-escaped multibyte characters
+      in <TT
+CLASS="COMMAND"
+>COPY FROM</TT
+> (Heikki Linnakangas)
+     </P
+><P
+>      A backslash followed by a multibyte character was not handled
+      correctly.  In some client character encodings, this could lead to
+      misinterpreting part of a multibyte character as a field separator
+      or end-of-copy-data marker.
+     </P
+></LI
+><LI
+><P
+>      Avoid preallocating executor hash tables
+      in <TT
+CLASS="COMMAND"
+>EXPLAIN</TT
+> without <TT
+CLASS="LITERAL"
+>ANALYZE</TT
+>
+      (Alexey Bashtanov)
+     </P
+></LI
+><LI
+><P
+>      Fix recently-introduced race conditions
+      in <TT
+CLASS="COMMAND"
+>LISTEN</TT
+>/<TT
+CLASS="COMMAND"
+>NOTIFY</TT
+> queue
+      handling (Tom Lane)
+     </P
+><P
+>      A newly-listening backend could attempt to read SLRU pages that
+      were in process of being truncated, possibly causing an error.
+     </P
+><P
+>      The queue tail pointer could become
+      set to a value that's not equal to the queue position of any
+      backend, resulting in effective disabling of the queue truncation
+      logic.  Continued use of <TT
+CLASS="COMMAND"
+>NOTIFY</TT
+> then led to
+      queue-fill warnings, and eventually to inability to send any more
+      notifies until the server is restarted.
+     </P
+></LI
+><LI
+><P
+>      Allow the <TT
+CLASS="TYPE"
+>jsonb</TT
+> concatenation operator to handle all
+      combinations of JSON data types (Tom Lane)
+     </P
+><P
+>      We can concatenate two JSON objects or two JSON arrays.  Handle
+      other cases by wrapping non-array inputs in one-element arrays,
+      then performing an array concatenation.  Previously, some
+      combinations of inputs followed this rule but others arbitrarily
+      threw an error.
+     </P
+></LI
+><LI
+><P
+>      Fix use of uninitialized value while parsing a <TT
+CLASS="LITERAL"
+>*</TT
+>
+      quantifier in a BRE-mode regular expression (Tom Lane)
+     </P
+><P
+>      This error could cause the quantifier to act non-greedy, that is
+      behave like a <TT
+CLASS="LITERAL"
+>*?</TT
+> quantifier would do in full
+      regular expressions.
+     </P
+></LI
+><LI
+><P
+>      Prevent possible data loss from incorrect detection of the
+      wraparound point of an SLRU log
+      (Noah Misch)
+     </P
+><P
+>      The wraparound point typically falls in the middle of a page, which
+      must be rounded off to a page boundary, and that was not done
+      correctly.  No issue could arise unless an installation had gotten
+      to within one page of SLRU overflow, which is unlikely in a
+      properly-functioning system.  If this did happen, it would manifest
+      in later <SPAN
+CLASS="QUOTE"
+>"apparent wraparound"</SPAN
+> or <SPAN
+CLASS="QUOTE"
+>"could not
+      access status of transaction"</SPAN
+> errors.
+     </P
+></LI
+><LI
+><P
+>      Fix memory leak in walsender processes while sending new snapshots
+      for logical decoding (Amit Kapila)
+     </P
+></LI
+><LI
+><P
+>      Fix walsender to accept additional commands after
+      terminating replication (Jeff Davis)
+     </P
+></LI
+><LI
+><P
+>      Avoid assertion failure in <CODE
+CLASS="FUNCTION"
+>pg_get_functiondef()</CODE
+>
+      when examining a function with a <TT
+CLASS="LITERAL"
+>TRANSFORM</TT
+> option
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>, re-allow including a password
+      in a <TT
+CLASS="REPLACEABLE"
+><I
+>connection_string</I
+></TT
+> argument of a
+      <TT
+CLASS="COMMAND"
+>\connect</TT
+> command (Tom Lane)
+     </P
+><P
+>      This used to work, but a recent bug fix caused the password to be
+      ignored (resulting in prompting for a password).
+     </P
+></LI
+><LI
+><P
+>      Fix assorted bugs
+      in <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>'s <TT
+CLASS="COMMAND"
+>\help</TT
+>
+      command (Kyotaro Horiguchi, Tom Lane)
+     </P
+><P
+>      <TT
+CLASS="COMMAND"
+>\help</TT
+> with two argument words failed to find a
+      command description using only the first word, for
+      example <TT
+CLASS="LITERAL"
+>\help reset all</TT
+> should show the help
+      for <TT
+CLASS="COMMAND"
+>RESET</TT
+> but did not.
+      Also, <TT
+CLASS="COMMAND"
+>\help</TT
+> often failed to invoke the pager when
+      it should.  It also leaked memory.
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+>, ensure that all WAL is
+      accounted for when rewinding a standby server
+      (Ian Barwick, Heikki Linnakangas)
+     </P
+></LI
+><LI
+><P
+>      Report the correct database name in connection failure error
+      messages from some client programs (&Aacute;lvaro Herrera)
+     </P
+><P
+>      If the database name was defaulted rather than given on the command
+      line, <SPAN
+CLASS="APPLICATION"
+>pg_dumpall</SPAN
+>,
+      <SPAN
+CLASS="APPLICATION"
+>pgbench</SPAN
+>, <SPAN
+CLASS="APPLICATION"
+>oid2name</SPAN
+>,
+      and <SPAN
+CLASS="APPLICATION"
+>vacuumlo</SPAN
+> would produce misleading
+      error messages after a connection failure.
+     </P
+></LI
+><LI
+><P
+>      Fix memory leak in <TT
+CLASS="FILENAME"
+>contrib/auto_explain</TT
+>
+      (Japin Li)
+     </P
+><P
+>      Memory consumed while producing the <TT
+CLASS="LITERAL"
+>EXPLAIN</TT
+>
+      output was not freed until the end of the current transaction (for a
+      top-level statement) or the end of the surrounding statement (for a
+      nested statement).  This was particularly a problem
+      with <TT
+CLASS="VARNAME"
+>log_nested_statements</TT
+> enabled.
+     </P
+></LI
+><LI
+><P
+>      In <TT
+CLASS="FILENAME"
+>contrib/postgres_fdw</TT
+>, avoid leaking open
+      connections to remote servers when a user mapping or foreign server
+      object is dropped (Bharath Rupireddy)
+     </P
+><P
+>      Open connections that depend on a dropped user mapping or foreign
+      server can no longer be referenced, but formerly they were kept
+      around anyway for the duration of the local session.
+     </P
+></LI
+><LI
+><P
+>      In <TT
+CLASS="FILENAME"
+>contrib/pgcrypto</TT
+>, check for error returns
+      from OpenSSL's EVP functions (Michael Paquier)
+     </P
+><P
+>      We do not really expect errors here, but this change silences
+      warnings from static analysis tools.
+     </P
+></LI
+><LI
+><P
+>      In <TT
+CLASS="FILENAME"
+>contrib/pg_trgm</TT
+>'s GiST index support, avoid
+      crash in the rare case that picksplit is called on exactly two index
+      items (Andrew Gierth, Alexander Korotkov)
+     </P
+></LI
+><LI
+><P
+>      Fix miscalculation of timeouts
+      in <TT
+CLASS="FILENAME"
+>contrib/pg_prewarm</TT
+>
+      and <TT
+CLASS="FILENAME"
+>contrib/postgres_fdw</TT
+>
+      (Alexey Kondratov, Tom Lane)
+     </P
+><P
+>      The main loop in <TT
+CLASS="FILENAME"
+>contrib/pg_prewarm</TT
+>'s
+      autoprewarm parent process underestimated its desired sleep time by
+      a factor of 1000, causing it to consume much more CPU than intended.
+      When waiting for a result from a remote
+      server, <TT
+CLASS="FILENAME"
+>contrib/postgres_fdw</TT
+> overestimated the
+      desired timeout by a factor of 1000 (though this error had been
+      mitigated by imposing a clamp to 60 seconds).
+     </P
+><P
+>      Both of these errors stemmed from incorrectly converting
+      seconds-and-microseconds to milliseconds.  Introduce a new
+      API <CODE
+CLASS="FUNCTION"
+>TimestampDifferenceMilliseconds()</CODE
+>
+      to make it easier to get this right in the future.
+     </P
+></LI
+><LI
+><P
+>      Improve <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+>'s heuristics for
+      selecting <TT
+CLASS="VARNAME"
+>PG_SYSROOT</TT
+> on macOS (Tom Lane)
+     </P
+><P
+>      The new method is more likely to produce desirable results when
+      Xcode is newer than the underlying operating system.  Choosing
+      a sysroot that does not match the OS version may result in
+      nonfunctional executables.
+     </P
+></LI
+><LI
+><P
+>      While building on macOS, specify <TT
+CLASS="OPTION"
+>-isysroot</TT
+> in
+      link steps as well as compile steps (James Hilliard)
+     </P
+><P
+>      This likewise improves the results when Xcode is out of sync with
+      the operating system.
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2021a for DST law changes in Russia (Volgograd zone) and
+      South Sudan, plus historical corrections for Australia, Bahamas,
+      Belize, Bermuda, Ghana, Israel, Kenya, Nigeria, Palestine,
+      Seychelles, and Vanuatu.
+     </P
+><P
+>      Notably, the Australia/Currie zone has been corrected to the point
+      where it is identical to Australia/Hobart.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-24.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release Notes</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.24</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

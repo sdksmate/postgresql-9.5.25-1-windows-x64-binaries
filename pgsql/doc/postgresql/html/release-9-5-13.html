@@ -1,0 +1,784 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.13</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.14"
+HREF="release-9-5-14.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.12"
+HREF="release-9-5-12.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.14"
+HREF="release-9-5-14.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.12"
+HREF="release-9-5-12.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-13"
+>E.13. Release 9.5.13</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2018-05-10</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.12.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129224"
+>E.13.1. Migration to Version 9.5.13</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if the function marking mistakes mentioned in the first
+    changelog entry below affect you, you will want to take steps to
+    correct your database catalogs.
+   </P
+><P
+>    Also, if you are upgrading from a version earlier than 9.5.12,
+    see <A
+HREF="release-9-5-12.html"
+>Section E.14</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129230"
+>E.13.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Fix incorrect volatility markings on a few built-in functions
+      (Thomas Munro, Tom Lane)
+     </P
+><P
+>      The functions
+      <CODE
+CLASS="FUNCTION"
+>query_to_xml</CODE
+>,
+      <CODE
+CLASS="FUNCTION"
+>cursor_to_xml</CODE
+>,
+      <CODE
+CLASS="FUNCTION"
+>cursor_to_xmlschema</CODE
+>,
+      <CODE
+CLASS="FUNCTION"
+>query_to_xmlschema</CODE
+>, and
+      <CODE
+CLASS="FUNCTION"
+>query_to_xml_and_xmlschema</CODE
+>
+      should be marked volatile because they execute user-supplied queries
+      that might contain volatile operations.  They were not, leading to a
+      risk of incorrect query optimization.  This has been repaired for new
+      installations by correcting the initial catalog data, but existing
+      installations will continue to contain the incorrect markings.
+      Practical use of these functions seems to pose little hazard, but in
+      case of trouble, it can be fixed by manually updating these
+      functions' <TT
+CLASS="STRUCTNAME"
+>pg_proc</TT
+> entries, for example
+      <TT
+CLASS="LITERAL"
+>ALTER FUNCTION pg_catalog.query_to_xml(text, boolean,
+      boolean, text) VOLATILE</TT
+>.  (Note that that will need to be
+      done in each database of the installation.)  Another option is
+      to <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> the database to a version
+      containing the corrected initial data.
+     </P
+></LI
+><LI
+><P
+>      Avoid re-using TOAST value OIDs that match dead-but-not-yet-vacuumed
+      TOAST entries (Pavan Deolasee)
+     </P
+><P
+>      Once the OID counter has wrapped around, it's possible to assign a
+      TOAST value whose OID matches a previously deleted entry in the same
+      TOAST table.  If that entry were not yet vacuumed away, this resulted
+      in <SPAN
+CLASS="QUOTE"
+>"unexpected chunk number 0 (expected 1) for toast
+      value <TT
+CLASS="REPLACEABLE"
+><I
+>nnnnn</I
+></TT
+>"</SPAN
+> errors, which would
+      persist until the dead entry was removed
+      by <TT
+CLASS="COMMAND"
+>VACUUM</TT
+>.  Fix by not selecting such OIDs when
+      creating a new TOAST entry.
+     </P
+></LI
+><LI
+><P
+>      Change <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+>'s algorithm for updating
+      <TT
+CLASS="STRUCTNAME"
+>pg_class</TT
+>.<TT
+CLASS="STRUCTFIELD"
+>reltuples</TT
+>
+      (David Gould)
+     </P
+><P
+>      Previously, pages not actually scanned by <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+>
+      were assumed to retain their old tuple density.  In a large table
+      where <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+> samples only a small fraction of the
+      pages, this meant that the overall tuple density estimate could not
+      change very much, so that <TT
+CLASS="STRUCTFIELD"
+>reltuples</TT
+> would
+      change nearly proportionally to changes in the table's physical size
+      (<TT
+CLASS="STRUCTFIELD"
+>relpages</TT
+>) regardless of what was actually
+      happening in the table.  This has been observed to result
+      in <TT
+CLASS="STRUCTFIELD"
+>reltuples</TT
+> becoming so much larger than
+      reality as to effectively shut off autovacuuming.  To fix, assume
+      that <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+>'s sample is a statistically unbiased
+      sample of the table (as it should be), and just extrapolate the
+      density observed within those pages to the whole table.
+     </P
+></LI
+><LI
+><P
+>      Avoid deadlocks in concurrent <TT
+CLASS="COMMAND"
+>CREATE INDEX
+      CONCURRENTLY</TT
+> commands that are run
+      under <TT
+CLASS="LITERAL"
+>SERIALIZABLE</TT
+> or <TT
+CLASS="LITERAL"
+>REPEATABLE
+      READ</TT
+> transaction isolation (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix possible slow execution of <TT
+CLASS="COMMAND"
+>REFRESH MATERIALIZED VIEW
+      CONCURRENTLY</TT
+> (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="LITERAL"
+>UPDATE/DELETE ... WHERE CURRENT OF</TT
+> to not fail
+      when the referenced cursor uses an index-only-scan plan (Yugo Nagata,
+      Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect planning of join clauses pushed into parameterized
+      paths (Andrew Gierth, Tom Lane)
+     </P
+><P
+>      This error could result in misclassifying a condition as
+      a <SPAN
+CLASS="QUOTE"
+>"join filter"</SPAN
+> for an outer join when it should be a
+      plain <SPAN
+CLASS="QUOTE"
+>"filter"</SPAN
+> condition, leading to incorrect join
+      output.
+     </P
+></LI
+><LI
+><P
+>      Fix possibly incorrect generation of an index-only-scan plan when the
+      same table column appears in multiple index columns, and only some of
+      those index columns use operator classes that can return the column
+      value (Kyotaro Horiguchi)
+     </P
+></LI
+><LI
+><P
+>      Fix misoptimization of <TT
+CLASS="LITERAL"
+>CHECK</TT
+> constraints having
+      provably-NULL subclauses of
+      top-level <TT
+CLASS="LITERAL"
+>AND</TT
+>/<TT
+CLASS="LITERAL"
+>OR</TT
+> conditions
+      (Tom Lane, Dean Rasheed)
+     </P
+><P
+>      This could, for example, allow constraint exclusion to exclude a
+      child table that should not be excluded from a query.
+     </P
+></LI
+><LI
+><P
+>      Fix executor crash due to double free in some <TT
+CLASS="LITERAL"
+>GROUPING
+      SET</TT
+> usages (Peter Geoghegan)
+     </P
+></LI
+><LI
+><P
+>      Avoid crash if a table rewrite event trigger is added concurrently
+      with a command that could call such a trigger (&Aacute;lvaro Herrera,
+      Andrew Gierth, Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Avoid failure if a query-cancel or session-termination interrupt
+      occurs while committing a prepared transaction (Stas Kelvich)
+     </P
+></LI
+><LI
+><P
+>      Fix query-lifespan memory leakage in repeatedly executed hash joins
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix overly strict sanity check
+      in <CODE
+CLASS="FUNCTION"
+>heap_prepare_freeze_tuple</CODE
+>
+      (&Aacute;lvaro Herrera)
+     </P
+><P
+>      This could result in incorrect <SPAN
+CLASS="QUOTE"
+>"cannot freeze committed
+      xmax"</SPAN
+> failures in databases that have
+      been <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>'d from 9.2 or earlier.
+     </P
+></LI
+><LI
+><P
+>      Prevent dangling-pointer dereference when a C-coded before-update row
+      trigger returns the <SPAN
+CLASS="QUOTE"
+>"old"</SPAN
+> tuple (Rushabh Lathia)
+     </P
+></LI
+><LI
+><P
+>      Reduce locking during autovacuum worker scheduling (Jeff Janes)
+     </P
+><P
+>      The previous behavior caused drastic loss of potential worker
+      concurrency in databases with many tables.
+     </P
+></LI
+><LI
+><P
+>      Ensure client hostname is copied while copying
+      <TT
+CLASS="STRUCTNAME"
+>pg_stat_activity</TT
+> data to local memory
+      (Edmund Horner)
+     </P
+><P
+>      Previously the supposedly-local snapshot contained a pointer into
+      shared memory, allowing the client hostname column to change
+      unexpectedly if any existing session disconnected.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect processing of multiple compound affixes
+      in <TT
+CLASS="LITERAL"
+>ispell</TT
+> dictionaries (Arthur Zakirov)
+     </P
+></LI
+><LI
+><P
+>      Fix collation-aware searches (that is, indexscans using inequality
+      operators) in SP-GiST indexes on text columns (Tom Lane)
+     </P
+><P
+>      Such searches would return the wrong set of rows in most non-C
+      locales.
+     </P
+></LI
+><LI
+><P
+>      Count the number of index tuples correctly during initial build of an
+      SP-GiST index (Tomas Vondra)
+     </P
+><P
+>      Previously, the tuple count was reported to be the same as that of
+      the underlying table, which is wrong if the index is partial.
+     </P
+></LI
+><LI
+><P
+>      Count the number of index tuples correctly during vacuuming of a
+      GiST index (Andrey Borodin)
+     </P
+><P
+>      Previously it reported the estimated number of heap tuples,
+      which might be inaccurate, and is certainly wrong if the
+      index is partial.
+     </P
+></LI
+><LI
+><P
+>      Fix a corner case where a streaming standby gets stuck at a WAL
+      continuation record (Kyotaro Horiguchi)
+     </P
+></LI
+><LI
+><P
+>      In logical decoding, avoid possible double processing of WAL data
+      when a walsender restarts (Craig Ringer)
+     </P
+></LI
+><LI
+><P
+>      Allow <CODE
+CLASS="FUNCTION"
+>scalarltsel</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>scalargtsel</CODE
+> to be used on non-core datatypes
+      (Tomas Vondra)
+     </P
+></LI
+><LI
+><P
+>      Reduce <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+>'s memory consumption when a
+      server error is reported after a large amount of query output has
+      been collected (Tom Lane)
+     </P
+><P
+>      Discard the previous output before, not after, processing the error
+      message.  On some platforms, notably Linux, this can make a
+      difference in the application's subsequent memory footprint.
+     </P
+></LI
+><LI
+><P
+>      Fix double-free crashes in <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>
+      (Patrick Krecker, Jeevan Ladhe)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> to handle <TT
+CLASS="TYPE"
+>long long
+      int</TT
+> variables correctly in MSVC builds (Michael Meskes,
+      Andrew Gierth)
+     </P
+></LI
+><LI
+><P
+>      Fix mis-quoting of values for list-valued GUC variables in dumps
+      (Michael Paquier, Tom Lane)
+     </P
+><P
+>      The <TT
+CLASS="VARNAME"
+>local_preload_libraries</TT
+>,
+      <TT
+CLASS="VARNAME"
+>session_preload_libraries</TT
+>,
+      <TT
+CLASS="VARNAME"
+>shared_preload_libraries</TT
+>,
+      and <TT
+CLASS="VARNAME"
+>temp_tablespaces</TT
+> variables were not correctly
+      quoted in <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> output.  This would
+      cause problems if settings for these variables appeared in
+      <TT
+CLASS="COMMAND"
+>CREATE FUNCTION ... SET</TT
+> or <TT
+CLASS="COMMAND"
+>ALTER
+      DATABASE/ROLE ... SET</TT
+> clauses.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_recvlogical</SPAN
+> to not fail against
+      pre-v10 <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> servers
+      (Michael Paquier)
+     </P
+><P
+>      A previous fix caused <SPAN
+CLASS="APPLICATION"
+>pg_recvlogical</SPAN
+> to
+      issue a command regardless of server version, but it should only be
+      issued to v10 and later servers.
+     </P
+></LI
+><LI
+><P
+>      Ensure that <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+> deletes files on the
+      target server if they are deleted from the source server during the
+      run (Takayuki Tsunakawa)
+     </P
+><P
+>      Failure to do this could result in data inconsistency on the target,
+      particularly if the file in question is a WAL segment.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+> to handle tables in
+      non-default tablespaces correctly (Takayuki Tsunakawa)
+     </P
+></LI
+><LI
+><P
+>      Fix overflow handling in <SPAN
+CLASS="APPLICATION"
+>PL/pgSQL</SPAN
+>
+      integer <TT
+CLASS="COMMAND"
+>FOR</TT
+> loops (Tom Lane)
+     </P
+><P
+>      The previous coding failed to detect overflow of the loop variable
+      on some non-gcc compilers, leading to an infinite loop.
+     </P
+></LI
+><LI
+><P
+>      Adjust <SPAN
+CLASS="APPLICATION"
+>PL/Python</SPAN
+> regression tests to pass
+      under Python 3.7 (Peter Eisentraut)
+     </P
+></LI
+><LI
+><P
+>      Support testing <SPAN
+CLASS="APPLICATION"
+>PL/Python</SPAN
+> and related
+      modules when building with Python 3 and MSVC (Andrew Dunstan)
+     </P
+></LI
+><LI
+><P
+>      Support building with Microsoft Visual Studio 2015 (Michael Paquier)
+     </P
+><P
+>      Various fixes needed for VS2015 compatibility were previously
+      back-patched into the 9.5 branch, but this one was missed.
+     </P
+></LI
+><LI
+><P
+>      Rename internal <CODE
+CLASS="FUNCTION"
+>b64_encode</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>b64_decode</CODE
+> functions to avoid conflict with
+      Solaris 11.4 built-in functions (Rainer Orth)
+     </P
+></LI
+><LI
+><P
+>      Sync our copy of the timezone library with IANA tzcode release 2018e
+      (Tom Lane)
+     </P
+><P
+>      This fixes the <SPAN
+CLASS="APPLICATION"
+>zic</SPAN
+> timezone data compiler
+      to cope with negative daylight-savings offsets.  While
+      the <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> project will not
+      immediately ship such timezone data, <SPAN
+CLASS="APPLICATION"
+>zic</SPAN
+>
+      might be used with timezone data obtained directly from IANA, so it
+      seems prudent to update <SPAN
+CLASS="APPLICATION"
+>zic</SPAN
+> now.
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2018d for DST law changes in Palestine and Antarctica (Casey
+      Station), plus historical corrections for Portugal and its colonies,
+      as well as Enderbury, Jamaica, Turks &amp; Caicos Islands, and
+      Uruguay.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-14.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-12.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.14</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.12</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

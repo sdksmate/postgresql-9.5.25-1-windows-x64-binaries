@@ -1,0 +1,960 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.15</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.16"
+HREF="release-9-5-16.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.14"
+HREF="release-9-5-14.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.16"
+HREF="release-9-5-16.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.14"
+HREF="release-9-5-14.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-15"
+>E.11. Release 9.5.15</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2018-11-08</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.14.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128838"
+>E.11.1. Migration to Version 9.5.15</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.13,
+    see <A
+HREF="release-9-5-13.html"
+>Section E.13</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128843"
+>E.11.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Fix corner-case failures
+      in <CODE
+CLASS="FUNCTION"
+>has_<TT
+CLASS="REPLACEABLE"
+><I
+>foo</I
+></TT
+>_privilege()</CODE
+>
+      family of functions (Tom Lane)
+     </P
+><P
+>      Return NULL rather than throwing an error when an invalid object OID
+      is provided.  Some of these functions got that right already, but not
+      all.  <CODE
+CLASS="FUNCTION"
+>has_column_privilege()</CODE
+> was additionally
+      capable of crashing on some platforms.
+     </P
+></LI
+><LI
+><P
+>      Avoid O(N^2) slowdown in regular expression match/split functions on
+      long strings (Andrew Gierth)
+     </P
+></LI
+><LI
+><P
+>      Fix parsing of standard multi-character operators that are immediately
+      followed by a comment or <TT
+CLASS="LITERAL"
+>+</TT
+> or <TT
+CLASS="LITERAL"
+>-</TT
+>
+      (Andrew Gierth)
+     </P
+><P
+>      This oversight could lead to parse errors, or to incorrect assignment
+      of precedence.
+     </P
+></LI
+><LI
+><P
+>      Avoid O(N^3) slowdown in lexer for long strings
+      of <TT
+CLASS="LITERAL"
+>+</TT
+> or <TT
+CLASS="LITERAL"
+>-</TT
+> characters
+      (Andrew Gierth)
+     </P
+></LI
+><LI
+><P
+>      Fix mis-execution of SubPlans when the outer query is being scanned
+      backwards (Andrew Gierth)
+     </P
+></LI
+><LI
+><P
+>      Fix failure of <TT
+CLASS="COMMAND"
+>UPDATE/DELETE ... WHERE CURRENT OF ...</TT
+>
+      after rewinding the referenced cursor (Tom Lane)
+     </P
+><P
+>      A cursor that scans multiple relations (particularly an inheritance
+      tree) could produce wrong behavior if rewound to an earlier relation.
+     </P
+></LI
+><LI
+><P
+>      Fix <CODE
+CLASS="FUNCTION"
+>EvalPlanQual</CODE
+> to handle conditionally-executed
+      InitPlans properly (Andrew Gierth, Tom Lane)
+     </P
+><P
+>      This resulted in hard-to-reproduce crashes or wrong answers in
+      concurrent updates, if they contained code such as an uncorrelated
+      sub-<TT
+CLASS="LITERAL"
+>SELECT</TT
+> inside a <TT
+CLASS="LITERAL"
+>CASE</TT
+>
+      construct.
+     </P
+></LI
+><LI
+><P
+>      Fix character-class checks to not fail on Windows for Unicode
+      characters above U+FFFF (Tom Lane, Kenji Uno)
+     </P
+><P
+>      This bug affected full-text-search operations, as well
+      as <TT
+CLASS="FILENAME"
+>contrib/ltree</TT
+>
+      and <TT
+CLASS="FILENAME"
+>contrib/pg_trgm</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Ensure that sequences owned by a foreign table are processed
+      by <TT
+CLASS="LITERAL"
+>ALTER OWNER</TT
+> on the table (Peter Eisentraut)
+     </P
+><P
+>      The ownership change should propagate to such sequences as well, but
+      this was missed for foreign tables.
+     </P
+></LI
+><LI
+><P
+>      Ensure that the server will process
+      already-received <TT
+CLASS="LITERAL"
+>NOTIFY</TT
+>
+      and <TT
+CLASS="LITERAL"
+>SIGTERM</TT
+> interrupts before waiting for client
+      input (Jeff Janes, Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix over-allocation of space for <CODE
+CLASS="FUNCTION"
+>array_out()</CODE
+>'s
+      result string (Keiichi Hirobe)
+     </P
+></LI
+><LI
+><P
+>      Fix memory leak in repeated SP-GiST index scans (Tom Lane)
+     </P
+><P
+>      This is only known to amount to anything significant in cases where
+      an exclusion constraint using SP-GiST receives many new index entries
+      in a single command.
+     </P
+></LI
+><LI
+><P
+>      Ensure that <CODE
+CLASS="FUNCTION"
+>ApplyLogicalMappingFile()</CODE
+> closes the
+      mapping file when done with it (Tomas Vondra)
+     </P
+><P
+>      Previously, the file descriptor was leaked, eventually resulting in
+      failures during logical decoding.
+     </P
+></LI
+><LI
+><P
+>      Fix logical decoding to handle cases where a mapped catalog table is
+      repeatedly rewritten, e.g., by <TT
+CLASS="LITERAL"
+>VACUUM FULL</TT
+>
+      (Andres Freund)
+     </P
+></LI
+><LI
+><P
+>      Prevent starting the server with <TT
+CLASS="VARNAME"
+>wal_level</TT
+> set
+      to too low a value to support an existing replication slot (Andres
+      Freund)
+     </P
+></LI
+><LI
+><P
+>      Avoid crash if a utility command causes infinite recursion (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      When initializing a hot standby, cope with duplicate XIDs caused by
+      two-phase transactions on the master
+      (Michael Paquier, Konstantin Knizhnik)
+     </P
+></LI
+><LI
+><P
+>      Fix event triggers to handle nested <TT
+CLASS="COMMAND"
+>ALTER TABLE</TT
+>
+      commands (Michael Paquier, &Aacute;lvaro Herrera)
+     </P
+></LI
+><LI
+><P
+>      Propagate parent process's transaction and statement start timestamps
+      to parallel workers (Konstantin Knizhnik)
+     </P
+><P
+>      This prevents misbehavior of functions such
+      as <CODE
+CLASS="FUNCTION"
+>transaction_timestamp()</CODE
+> when executed in a
+      worker.
+     </P
+></LI
+><LI
+><P
+>      Fix WAL file recycling logic to work correctly on standby servers
+      (Michael Paquier)
+     </P
+><P
+>      Depending on the setting of <TT
+CLASS="VARNAME"
+>archive_mode</TT
+>, a standby
+      might fail to remove some WAL files that could be removed.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of commit-timestamp tracking during recovery
+      (Masahiko Sawada, Michael Paquier)
+     </P
+><P
+>      If commit timestamp tracking has been turned on or off, recovery might
+      fail due to trying to fetch the commit timestamp for a transaction
+      that did not record it.
+     </P
+></LI
+><LI
+><P
+>      Randomize the <CODE
+CLASS="FUNCTION"
+>random()</CODE
+> seed in bootstrap and
+      standalone backends, and in <SPAN
+CLASS="APPLICATION"
+>initdb</SPAN
+>
+      (Noah Misch)
+     </P
+><P
+>      The main practical effect of this change is that it avoids a scenario
+      where <SPAN
+CLASS="APPLICATION"
+>initdb</SPAN
+> might mistakenly conclude that
+      POSIX shared memory is not available, due to name collisions caused by
+      always using the same random seed.
+     </P
+></LI
+><LI
+><P
+>      Allow DSM allocation to be interrupted (Chris Travers)
+     </P
+></LI
+><LI
+><P
+>      Properly handle turning <TT
+CLASS="VARNAME"
+>full_page_writes</TT
+> on
+      dynamically (Kyotaro Horiguchi)
+     </P
+></LI
+><LI
+><P
+>      Avoid possible buffer overrun when replaying GIN page recompression
+      from WAL (Alexander Korotkov, Sivasubramanian Ramasubramanian)
+     </P
+></LI
+><LI
+><P
+>      Fix missed fsync of a replication slot's directory (Konstantin
+      Knizhnik, Michael Paquier)
+     </P
+></LI
+><LI
+><P
+>      Fix unexpected timeouts when
+      using <TT
+CLASS="VARNAME"
+>wal_sender_timeout</TT
+> on a slow server
+      (Noah Misch)
+     </P
+></LI
+><LI
+><P
+>      Ensure that hot standby processes use the correct WAL consistency
+      point (Alexander Kukushkin, Michael Paquier)
+     </P
+><P
+>      This prevents possible misbehavior just after a standby server has
+      reached a consistent database state during WAL replay.
+     </P
+></LI
+><LI
+><P
+>      Ensure background workers are stopped properly when the postmaster
+      receives a fast-shutdown request before completing database startup
+      (Alexander Kukushkin)
+     </P
+></LI
+><LI
+><P
+>      Don't run atexit callbacks when servicing <TT
+CLASS="LITERAL"
+>SIGQUIT</TT
+>
+      (Heikki Linnakangas)
+     </P
+></LI
+><LI
+><P
+>      Don't record foreign-server user mappings as members of extensions
+      (Tom Lane)
+     </P
+><P
+>      If <TT
+CLASS="COMMAND"
+>CREATE USER MAPPING</TT
+> is executed in an extension
+      script, an extension dependency was created for the user mapping,
+      which is unexpected.  Roles can't be extension members, so user
+      mappings shouldn't be either.
+     </P
+></LI
+><LI
+><P
+>      Make syslogger more robust against failures in opening CSV log files
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>, as well as documentation
+      examples, to call <CODE
+CLASS="FUNCTION"
+>PQconsumeInput()</CODE
+> before
+      each <CODE
+CLASS="FUNCTION"
+>PQnotifies()</CODE
+> call (Tom Lane)
+     </P
+><P
+>      This fixes cases in which <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+> would not
+      report receipt of a <TT
+CLASS="LITERAL"
+>NOTIFY</TT
+> message until after the
+      next command.
+     </P
+></LI
+><LI
+><P
+>      Fix possible inconsistency in <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>'s
+      sorting of dissimilar object names (Jacob Champion)
+     </P
+></LI
+><LI
+><P
+>      Ensure that <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+> will schema-qualify
+      the table name when
+      emitting <TT
+CLASS="LITERAL"
+>DISABLE</TT
+>/<TT
+CLASS="LITERAL"
+>ENABLE TRIGGER</TT
+>
+      commands (Tom Lane)
+     </P
+><P
+>      This avoids failures due to the new policy of running restores with
+      restrictive search path.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> to handle event triggers in
+      extensions correctly (Haribabu Kommi)
+     </P
+><P
+>      <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> failed to preserve an event
+      trigger's extension-membership status.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>'s cluster state check to
+      work correctly on a standby server (Bruce Momjian)
+     </P
+></LI
+><LI
+><P
+>      Enforce type <TT
+CLASS="TYPE"
+>cube</TT
+>'s dimension limit in
+      all <TT
+CLASS="FILENAME"
+>contrib/cube</TT
+> functions (Andrey Borodin)
+     </P
+><P
+>      Previously, some cube-related functions could construct values that
+      would be rejected by <CODE
+CLASS="FUNCTION"
+>cube_in()</CODE
+>, leading to
+      dump/reload failures.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="FILENAME"
+>contrib/unaccent</TT
+>'s
+      <CODE
+CLASS="FUNCTION"
+>unaccent()</CODE
+> function to use
+      the <TT
+CLASS="LITERAL"
+>unaccent</TT
+> text search dictionary that is in the
+      same schema as the function (Tom Lane)
+     </P
+><P
+>      Previously it tried to look up the dictionary using the search path,
+      which could fail if the search path has a restrictive value.
+     </P
+></LI
+><LI
+><P
+>      Fix build problems on macOS 10.14 (Mojave) (Tom Lane)
+     </P
+><P
+>      Adjust <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+> to add
+      an <TT
+CLASS="OPTION"
+>-isysroot</TT
+> switch to <TT
+CLASS="VARNAME"
+>CPPFLAGS</TT
+>;
+      without this, PL/Perl and PL/Tcl fail to configure or build on macOS
+      10.14.  The specific sysroot used can be overridden at configure time
+      or build time by setting the <TT
+CLASS="VARNAME"
+>PG_SYSROOT</TT
+> variable in
+      the arguments of <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+>
+      or <SPAN
+CLASS="APPLICATION"
+>make</SPAN
+>.
+     </P
+><P
+>      It is now recommended that Perl-related extensions
+      write <TT
+CLASS="LITERAL"
+>$(perl_includespec)</TT
+> rather
+      than <TT
+CLASS="LITERAL"
+>-I$(perl_archlibexp)/CORE</TT
+> in their compiler
+      flags.  The latter continues to work on most platforms, but not recent
+      macOS.
+     </P
+><P
+>      Also, it should no longer be necessary to
+      specify <TT
+CLASS="OPTION"
+>--with-tclconfig</TT
+> manually to get PL/Tcl to
+      build on recent macOS releases.
+     </P
+></LI
+><LI
+><P
+>      Fix MSVC build and regression-test scripts to work on recent Perl
+      versions (Andrew Dunstan)
+     </P
+><P
+>      Perl no longer includes the current directory in its search path
+      by default; work around that.
+     </P
+></LI
+><LI
+><P
+>      On Windows, allow the regression tests to be run by an Administrator
+      account (Andrew Dunstan)
+     </P
+><P
+>      To do this safely, <SPAN
+CLASS="APPLICATION"
+>pg_regress</SPAN
+> now gives up
+      any such privileges at startup.
+     </P
+></LI
+><LI
+><P
+>      Support building on Windows with Visual Studio 2015 or Visual Studio 2017
+      (Michael Paquier, Haribabu Kommi)
+     </P
+></LI
+><LI
+><P
+>      Allow btree comparison functions to return <TT
+CLASS="LITERAL"
+>INT_MIN</TT
+>
+      (Tom Lane)
+     </P
+><P
+>      Up to now, we've forbidden datatype-specific comparison functions from
+      returning <TT
+CLASS="LITERAL"
+>INT_MIN</TT
+>, which allows callers to invert
+      the sort order just by negating the comparison result.  However, this
+      was never safe for comparison functions that directly return the
+      result of <CODE
+CLASS="FUNCTION"
+>memcmp()</CODE
+>, <CODE
+CLASS="FUNCTION"
+>strcmp()</CODE
+>,
+      etc, as POSIX doesn't place any such restriction on those functions.
+      At least some recent versions of <CODE
+CLASS="FUNCTION"
+>memcmp()</CODE
+> can
+      return <TT
+CLASS="LITERAL"
+>INT_MIN</TT
+>, causing incorrect sort ordering.
+      Hence, we've removed this restriction.  Callers must now use
+      the <TT
+CLASS="LITERAL"
+>INVERT_COMPARE_RESULT()</TT
+> macro if they wish to
+      invert the sort order.
+     </P
+></LI
+><LI
+><P
+>      Fix recursion hazard in shared-invalidation message processing
+      (Tom Lane)
+     </P
+><P
+>      This error could, for example, result in failure to access a system
+      catalog or index that had just been processed by <TT
+CLASS="COMMAND"
+>VACUUM
+      FULL</TT
+>.
+     </P
+><P
+>      This change adds a new result code
+      for <CODE
+CLASS="FUNCTION"
+>LockAcquire</CODE
+>, which might possibly affect
+      external callers of that function, though only very unusual usage
+      patterns would have an issue with it.  The API
+      of <CODE
+CLASS="FUNCTION"
+>LockAcquireExtended</CODE
+> is also changed.
+     </P
+></LI
+><LI
+><P
+>      Save and restore SPI's global variables
+      during <CODE
+CLASS="FUNCTION"
+>SPI_connect()</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>SPI_finish()</CODE
+> (Chapman Flack, Tom Lane)
+     </P
+><P
+>      This prevents possible interference when one SPI-using function calls
+      another.
+     </P
+></LI
+><LI
+><P
+>      Provide <TT
+CLASS="LITERAL"
+>ALLOCSET_DEFAULT_SIZES</TT
+> and sibling macros
+      in back branches (Tom Lane)
+     </P
+><P
+>      These macros have existed since 9.6, but there were requests to add
+      them to older branches to allow extensions to rely on them without
+      branch-specific coding.
+     </P
+></LI
+><LI
+><P
+>      Avoid using potentially-under-aligned page buffers (Tom Lane)
+     </P
+><P
+>      Invent new union types <TT
+CLASS="TYPE"
+>PGAlignedBlock</TT
+>
+      and <TT
+CLASS="TYPE"
+>PGAlignedXLogBlock</TT
+>, and use these in place of plain
+      char arrays, ensuring that the compiler can't place the buffer at a
+      misaligned start address.  This fixes potential core dumps on
+      alignment-picky platforms, and may improve performance even on
+      platforms that allow misalignment.
+     </P
+></LI
+><LI
+><P
+>      Make <TT
+CLASS="FILENAME"
+>src/port/snprintf.c</TT
+> follow the C99
+      standard's definition of <CODE
+CLASS="FUNCTION"
+>snprintf()</CODE
+>'s result
+      value (Tom Lane)
+     </P
+><P
+>      On platforms where this code is used (mostly Windows), its pre-C99
+      behavior could lead to failure to detect buffer overrun, if the
+      calling code assumed C99 semantics.
+     </P
+></LI
+><LI
+><P
+>      When building on i386 with the <SPAN
+CLASS="APPLICATION"
+>clang</SPAN
+>
+      compiler, require <TT
+CLASS="OPTION"
+>-msse2</TT
+> to be used (Andres Freund)
+     </P
+><P
+>      This avoids problems with missed floating point overflow checks.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+>'s detection of the result
+      type of <CODE
+CLASS="FUNCTION"
+>strerror_r()</CODE
+> (Tom Lane)
+     </P
+><P
+>      The previous coding got the wrong answer when building
+      with <SPAN
+CLASS="APPLICATION"
+>icc</SPAN
+> on Linux (and perhaps in other
+      cases), leading to <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+> not returning
+      useful error messages for system-reported errors.
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2018g for DST law changes in Chile, Fiji, Morocco, and Russia
+      (Volgograd), plus historical corrections for China, Hawaii, Japan,
+      Macau, and North Korea.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-16.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-14.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.16</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.14</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

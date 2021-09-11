@@ -1,0 +1,726 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>POSIX Time Zone Specifications</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Date/Time Support"
+HREF="datetime-appendix.html"><LINK
+REL="PREVIOUS"
+TITLE="Date/Time Configuration Files"
+HREF="datetime-config-files.html"><LINK
+REL="NEXT"
+TITLE="History of Units"
+HREF="datetime-units-history.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Date/Time Configuration Files"
+HREF="datetime-config-files.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="datetime-appendix.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix B. Date/Time Support</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="History of Units"
+HREF="datetime-units-history.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="DATETIME-POSIX-TIMEZONE-SPECS"
+>B.5. <ACRONYM
+CLASS="ACRONYM"
+>POSIX</ACRONYM
+> Time Zone Specifications</A
+></H1
+><P
+>   <ACRONYM
+CLASS="ACRONYM"
+>PostgreSQL</ACRONYM
+> can accept time zone specifications that
+   are written according to the <ACRONYM
+CLASS="ACRONYM"
+>POSIX</ACRONYM
+> standard's rules
+   for the <TT
+CLASS="VARNAME"
+>TZ</TT
+> environment
+   variable.  <ACRONYM
+CLASS="ACRONYM"
+>POSIX</ACRONYM
+> time zone specifications are
+   inadequate to deal with the complexity of real-world time zone history,
+   but there are sometimes reasons to use them.
+  </P
+><P
+>   A POSIX time zone specification has the form
+</P><PRE
+CLASS="SYNOPSIS"
+><TT
+CLASS="REPLACEABLE"
+><I
+>STD</I
+></TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>offset</I
+></TT
+> [<SPAN
+CLASS="OPTIONAL"
+> <TT
+CLASS="REPLACEABLE"
+><I
+>DST</I
+></TT
+> [<SPAN
+CLASS="OPTIONAL"
+> <TT
+CLASS="REPLACEABLE"
+><I
+>dstoffset</I
+></TT
+> </SPAN
+>] [<SPAN
+CLASS="OPTIONAL"
+> , <TT
+CLASS="REPLACEABLE"
+><I
+>rule</I
+></TT
+> </SPAN
+>] </SPAN
+>]</PRE
+><P>
+   (For readability, we show spaces between the fields, but spaces should
+   not be used in practice.)  The fields are:
+   <P
+></P
+></P><UL
+><LI
+><P
+>      <TT
+CLASS="REPLACEABLE"
+><I
+>STD</I
+></TT
+> is the zone abbreviation to be used
+      for standard time.
+     </P
+></LI
+><LI
+><P
+>      <TT
+CLASS="REPLACEABLE"
+><I
+>offset</I
+></TT
+> is the zone's standard-time offset
+      from UTC.
+     </P
+></LI
+><LI
+><P
+>      <TT
+CLASS="REPLACEABLE"
+><I
+>DST</I
+></TT
+> is the zone abbreviation to be used
+      for daylight-savings time.  If this field and the following ones are
+      omitted, the zone uses a fixed UTC offset with no daylight-savings
+      rule.
+     </P
+></LI
+><LI
+><P
+>      <TT
+CLASS="REPLACEABLE"
+><I
+>dstoffset</I
+></TT
+> is the daylight-savings offset
+      from UTC.  This field is typically omitted, since it defaults to one
+      hour less than the standard-time <TT
+CLASS="REPLACEABLE"
+><I
+>offset</I
+></TT
+>,
+      which is usually the right thing.
+     </P
+></LI
+><LI
+><P
+>      <TT
+CLASS="REPLACEABLE"
+><I
+>rule</I
+></TT
+> defines the rule for when daylight
+      savings is in effect, as described below.
+     </P
+></LI
+></UL
+><P>
+  </P
+><P
+>   In this syntax, a zone abbreviation can be a string of letters, such
+   as <TT
+CLASS="LITERAL"
+>EST</TT
+>, or an arbitrary string surrounded by angle
+   brackets, such as <TT
+CLASS="LITERAL"
+>&lt;UTC-05&gt;</TT
+>.
+   Note that the zone abbreviations given here are only used for output,
+   and even then only in some timestamp output formats.  The zone
+   abbreviations recognized in timestamp input are determined as explained
+   in <A
+HREF="datetime-config-files.html"
+>Section B.4</A
+>.
+  </P
+><P
+>   The offset fields specify the hours, and optionally minutes and seconds,
+   difference from UTC.  They have the format
+   <TT
+CLASS="REPLACEABLE"
+><I
+>hh</I
+></TT
+>[<SPAN
+CLASS="OPTIONAL"
+><TT
+CLASS="LITERAL"
+>:</TT
+><TT
+CLASS="REPLACEABLE"
+><I
+>mm</I
+></TT
+>[<SPAN
+CLASS="OPTIONAL"
+><TT
+CLASS="LITERAL"
+>:</TT
+><TT
+CLASS="REPLACEABLE"
+><I
+>ss</I
+></TT
+></SPAN
+>]</SPAN
+>]
+   optionally with a leading sign (<TT
+CLASS="LITERAL"
+>+</TT
+>
+   or <TT
+CLASS="LITERAL"
+>-</TT
+>).  The positive sign is used for
+   zones <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>west</I
+></SPAN
+> of Greenwich.  (Note that this is the
+   opposite of the ISO-8601 sign convention used elsewhere in
+   <ACRONYM
+CLASS="ACRONYM"
+>PostgreSQL</ACRONYM
+>.)  <TT
+CLASS="REPLACEABLE"
+><I
+>hh</I
+></TT
+> can have
+   one or two digits; <TT
+CLASS="REPLACEABLE"
+><I
+>mm</I
+></TT
+>
+   and <TT
+CLASS="REPLACEABLE"
+><I
+>ss</I
+></TT
+> (if used) must have two.
+  </P
+><P
+>   The daylight-savings transition <TT
+CLASS="REPLACEABLE"
+><I
+>rule</I
+></TT
+> has the
+   format
+</P><PRE
+CLASS="SYNOPSIS"
+><TT
+CLASS="REPLACEABLE"
+><I
+>dstdate</I
+></TT
+> [<SPAN
+CLASS="OPTIONAL"
+> <TT
+CLASS="LITERAL"
+>/</TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>dsttime</I
+></TT
+> </SPAN
+>] <TT
+CLASS="LITERAL"
+>,</TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>stddate</I
+></TT
+> [<SPAN
+CLASS="OPTIONAL"
+> <TT
+CLASS="LITERAL"
+>/</TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>stdtime</I
+></TT
+> </SPAN
+>]</PRE
+><P>
+   (As before, spaces should not be included in practice.)
+   The <TT
+CLASS="REPLACEABLE"
+><I
+>dstdate</I
+></TT
+>
+   and <TT
+CLASS="REPLACEABLE"
+><I
+>dsttime</I
+></TT
+> fields define when daylight-savings
+   time starts, while <TT
+CLASS="REPLACEABLE"
+><I
+>stddate</I
+></TT
+>
+   and <TT
+CLASS="REPLACEABLE"
+><I
+>stdtime</I
+></TT
+> define when standard time
+   starts.  (In some cases, notably in zones south of the equator, the
+   former might be later in the year than the latter.)  The date fields
+   have one of these formats:
+   <P
+></P
+></P><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></DT
+><DD
+><P
+>       A plain integer denotes a day of the year, counting from zero to
+       364, or to 365 in leap years.
+      </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>J</TT
+><TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></DT
+><DD
+><P
+>       In this form, <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> counts from 1 to 365,
+       and February 29 is not counted even if it is present.  (Thus, a
+       transition occurring on February 29 could not be specified this
+       way.  However, days after February have the same numbers whether
+       it's a leap year or not, so that this form is usually more useful
+       than the plain-integer form for transitions on fixed dates.)
+      </P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>M</TT
+><TT
+CLASS="REPLACEABLE"
+><I
+>m</I
+></TT
+><TT
+CLASS="LITERAL"
+>.</TT
+><TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+><TT
+CLASS="LITERAL"
+>.</TT
+><TT
+CLASS="REPLACEABLE"
+><I
+>d</I
+></TT
+></DT
+><DD
+><P
+>       This form specifies a transition that always happens during the same
+       month and on the same day of the week.  <TT
+CLASS="REPLACEABLE"
+><I
+>m</I
+></TT
+>
+       identifies the month, from 1 to 12.  <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>
+       specifies the <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>'th occurrence of the
+       weekday identified by <TT
+CLASS="REPLACEABLE"
+><I
+>d</I
+></TT
+>.
+       <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> is a number between 1 and 4, or 5
+       meaning the last occurrence of that weekday in the month (which
+       could be the fourth or the fifth).  <TT
+CLASS="REPLACEABLE"
+><I
+>d</I
+></TT
+> is
+       a number between 0 and 6, with 0 indicating Sunday.
+       For example, <TT
+CLASS="LITERAL"
+>M3.2.0</TT
+> means <SPAN
+CLASS="QUOTE"
+>"the second
+       Sunday in March"</SPAN
+>.
+      </P
+></DD
+></DL
+></DIV
+><P>
+  </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>    The <TT
+CLASS="LITERAL"
+>M</TT
+> format is sufficient to describe many common
+    daylight-savings transition laws.  But note that none of these variants
+    can deal with daylight-savings law changes, so in practice the
+    historical data stored for named time zones (in the IANA time zone
+    database) is necessary to interpret past time stamps correctly.
+   </P
+></BLOCKQUOTE
+></DIV
+><P
+>   The time fields in a transition rule have the same format as the offset
+   fields described previously, except that they cannot contain signs.
+   They define the current local time at which the change to the other
+   time occurs.  If omitted, they default to <TT
+CLASS="LITERAL"
+>02:00:00</TT
+>.
+  </P
+><P
+>   If a daylight-savings abbreviation is given but the
+   transition <TT
+CLASS="REPLACEABLE"
+><I
+>rule</I
+></TT
+> field is omitted,
+   <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> attempts to determine the
+   transition times by consulting the <TT
+CLASS="FILENAME"
+>posixrules</TT
+> file
+   in the IANA time zone database.  This file has the same format as a
+   full time zone entry, but only its transition timing rules are used,
+   not its UTC offsets.  Typically, this file has the same contents as the
+   <TT
+CLASS="LITERAL"
+>US/Eastern</TT
+> file, so that POSIX-style time zone
+   specifications follow USA daylight-savings rules.  If needed, you can
+   adjust this behavior by replacing the <TT
+CLASS="FILENAME"
+>posixrules</TT
+>
+   file.
+  </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>    The facility to consult a <TT
+CLASS="FILENAME"
+>posixrules</TT
+> file has
+    been deprecated by IANA, and it is likely to go away in the future.
+    One bug in this feature, which is unlikely to be fixed before it
+    disappears, is that it fails to apply DST rules to dates after 2038.
+   </P
+></BLOCKQUOTE
+></DIV
+><P
+>   If the <TT
+CLASS="FILENAME"
+>posixrules</TT
+> file is not present,
+   the fallback behavior is to use the
+   rule <TT
+CLASS="LITERAL"
+>M3.2.0,M11.1.0</TT
+>, which corresponds to USA
+   practice as of 2020 (that is, spring forward on the second Sunday of
+   March, fall back on the first Sunday of November, both transitions
+   occurring at 2AM prevailing time).
+  </P
+><P
+>   As an example, <TT
+CLASS="LITERAL"
+>CET-1CEST,M3.5.0,M10.5.0/3</TT
+> describes
+   current (as of 2020) timekeeping practice in Paris.  This specification
+   says that standard time has the abbreviation <TT
+CLASS="LITERAL"
+>CET</TT
+> and
+   is one hour ahead (east) of UTC; daylight savings time has the
+   abbreviation <TT
+CLASS="LITERAL"
+>CEST</TT
+> and is implicitly two hours ahead
+   of UTC; daylight savings time begins on the last Sunday in March at 2AM
+   CET and ends on the last Sunday in October at 3AM CEST.
+  </P
+><P
+>   The four timezone names <TT
+CLASS="LITERAL"
+>EST5EDT</TT
+>,
+   <TT
+CLASS="LITERAL"
+>CST6CDT</TT
+>, <TT
+CLASS="LITERAL"
+>MST7MDT</TT
+>,
+   and <TT
+CLASS="LITERAL"
+>PST8PDT</TT
+> look like they are POSIX zone
+   specifications.  However, they actually are treated as named time zones
+   because (for historical reasons) there are files by those names in the
+   IANA time zone database.  The practical implication of this is that
+   these zone names will produce valid historical USA daylight-savings
+   transitions, even when a plain POSIX specification would not due to
+   lack of a suitable <TT
+CLASS="FILENAME"
+>posixrules</TT
+> file.
+  </P
+><P
+>   One should be wary that it is easy to misspell a POSIX-style time zone
+   specification, since there is no check on the reasonableness of the
+   zone abbreviation(s).  For example, <TT
+CLASS="LITERAL"
+>SET TIMEZONE TO
+   FOOBAR0</TT
+> will work, leaving the system effectively using a
+   rather peculiar abbreviation for UTC.
+  </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="datetime-config-files.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="datetime-units-history.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Date/Time Configuration Files</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="datetime-appendix.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>History of Units</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,738 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.17</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.18"
+HREF="release-9-5-18.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.16"
+HREF="release-9-5-16.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.18"
+HREF="release-9-5-18.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.16"
+HREF="release-9-5-16.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-17"
+>E.9. Release 9.5.17</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2019-05-09</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.16.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128500"
+>E.9.1. Migration to Version 9.5.17</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.13,
+    see <A
+HREF="release-9-5-13.html"
+>Section E.13</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128505"
+>E.9.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Prevent row-level security policies from being bypassed via
+      selectivity estimators (Dean Rasheed)
+     </P
+><P
+>      Some of the planner's selectivity estimators apply user-defined
+      operators to values found in <TT
+CLASS="STRUCTNAME"
+>pg_statistic</TT
+>
+      (e.g., most-common values).  A leaky operator therefore can disclose
+      some of the entries in a data column, even if the calling user lacks
+      permission to read that column.  In CVE-2017-7484 we added
+      restrictions to forestall that, but we failed to consider the
+      effects of row-level security.  A user who has SQL permission to
+      read a column, but who is forbidden to see certain rows due to RLS
+      policy, might still learn something about those rows' contents via a
+      leaky operator.  This patch further tightens the rules, allowing
+      leaky operators to be applied to statistics data only when there is
+      no relevant RLS policy.  (CVE-2019-10130)
+     </P
+></LI
+><LI
+><P
+>      Fix behavior for an <TT
+CLASS="COMMAND"
+>UPDATE</TT
+>
+      or <TT
+CLASS="COMMAND"
+>DELETE</TT
+> on an inheritance tree or partitioned
+      table in which every table can be excluded (Amit Langote, Tom Lane)
+     </P
+><P
+>      In such cases, the query did not report the correct set of output
+      columns when a <TT
+CLASS="LITERAL"
+>RETURNING</TT
+> clause was present, and
+      if there were any statement-level triggers that should be fired, it
+      didn't fire them.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of explicit <TT
+CLASS="LITERAL"
+>DEFAULT</TT
+> items in
+      an <TT
+CLASS="COMMAND"
+>INSERT ... VALUES</TT
+> command with
+      multiple <TT
+CLASS="LITERAL"
+>VALUES</TT
+> rows, if the target relation is
+      an updatable view (Amit Langote, Dean Rasheed)
+     </P
+><P
+>      When the updatable view has no default for the column but its
+      underlying table has one, a single-row <TT
+CLASS="COMMAND"
+>INSERT
+      ... VALUES</TT
+> will use the underlying table's default.
+      In the multi-row case, however, NULL was always used.  Correct it to
+      act like the single-row case.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="COMMAND"
+>CREATE VIEW</TT
+> to allow zero-column views
+      (Ashutosh Sharma)
+     </P
+><P
+>      We should allow this for consistency with allowing zero-column
+      tables.  Since a table can be converted to a view, zero-column views
+      could be created even with the restriction in place, leading to
+      dump/reload failures.
+     </P
+></LI
+><LI
+><P
+>      Add missing support for <TT
+CLASS="COMMAND"
+>CREATE TABLE IF NOT EXISTS ... AS
+      EXECUTE ...</TT
+> (Andreas Karlsson)
+     </P
+><P
+>      The combination of <TT
+CLASS="LITERAL"
+>IF NOT EXISTS</TT
+>
+      and <TT
+CLASS="LITERAL"
+>EXECUTE</TT
+> should work, but the grammar omitted
+      it.
+     </P
+></LI
+><LI
+><P
+>      Ensure that sub-<TT
+CLASS="COMMAND"
+>SELECT</TT
+>s appearing in
+      row-level-security policy expressions are executed with the correct
+      user's permissions (Dean Rasheed)
+     </P
+><P
+>      Previously, if the table having the RLS policy was accessed via a
+      view, such checks might be executed as the user calling the view,
+      not as the view owner as they should be.
+     </P
+></LI
+><LI
+><P
+>      Accept XML documents as valid values of type <TT
+CLASS="TYPE"
+>xml</TT
+>
+      when <TT
+CLASS="VARNAME"
+>xmloption</TT
+> is set
+      to <TT
+CLASS="LITERAL"
+>content</TT
+>, as required by SQL:2006 and later
+      (Chapman Flack)
+     </P
+><P
+>      Previously <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> followed the
+      SQL:2003 definition, which doesn't allow this.  But that creates a
+      serious problem for dump/restore: there is no setting
+      of <TT
+CLASS="VARNAME"
+>xmloption</TT
+> that will accept all valid XML data.
+      Hence, switch to the 2006 definition.
+     </P
+><P
+>      <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> is also modified to emit
+      <TT
+CLASS="LITERAL"
+>SET xmloption = content</TT
+> while restoring data,
+      ensuring that dump/restore works even if the prevailing
+      setting is <TT
+CLASS="LITERAL"
+>document</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Improve server's startup-time checks for whether a pre-existing
+      shared memory segment is still in use (Noah Misch)
+     </P
+><P
+>      The postmaster is now more likely to detect that there are still
+      active processes from a previous postmaster incarnation, even if
+      the <TT
+CLASS="FILENAME"
+>postmaster.pid</TT
+> file has been removed.
+     </P
+></LI
+><LI
+><P
+>      Fix incompatibility of GIN-index WAL records (Alexander Korotkov)
+     </P
+><P
+>      A fix applied in February's minor releases was not sufficiently
+      careful about backwards compatibility, leading to problems if a
+      standby server of that vintage reads GIN page-deletion WAL records
+      generated by a primary server of a previous minor release.
+     </P
+></LI
+><LI
+><P
+>      Tolerate <TT
+CLASS="LITERAL"
+>EINVAL</TT
+> and <TT
+CLASS="LITERAL"
+>ENOSYS</TT
+>
+      error results, where appropriate, for <CODE
+CLASS="FUNCTION"
+>fsync</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>sync_file_range</CODE
+> calls
+      (Thomas Munro, James Sewell)
+     </P
+><P
+>      The previous change to panic on file synchronization failures turns
+      out to have been excessively paranoid for certain cases where a
+      failure is predictable and essentially means <SPAN
+CLASS="QUOTE"
+>"operation not
+      supported"</SPAN
+>.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="QUOTE"
+>"failed to build any <TT
+CLASS="REPLACEABLE"
+><I
+>N</I
+></TT
+>-way
+      joins"</SPAN
+> planner failures with lateral references leading out
+      of <TT
+CLASS="LITERAL"
+>FULL</TT
+> outer joins (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Check the appropriate user's permissions when enforcing rules about
+      letting a leaky operator see <TT
+CLASS="STRUCTNAME"
+>pg_statistic</TT
+>
+      data (Dean Rasheed)
+     </P
+><P
+>      When an underlying table is being accessed via a view, consider the
+      privileges of the view owner while deciding whether leaky operators
+      may be applied to the table's statistics data, rather than the
+      privileges of the user making the query.  This makes the planner's
+      rules about what data is visible match up with the executor's,
+      avoiding unnecessarily-poor plans.
+     </P
+></LI
+><LI
+><P
+>      Avoid O(N^2) performance issue when rolling back a transaction that
+      created many tables (Tomas Vondra)
+     </P
+></LI
+><LI
+><P
+>      Fix race conditions in management of dynamic shared memory
+      (Thomas Munro)
+     </P
+><P
+>      These could lead to <SPAN
+CLASS="QUOTE"
+>"dsa_area could not attach to
+      segment"</SPAN
+> or <SPAN
+CLASS="QUOTE"
+>"cannot unpin a segment that is not
+      pinned"</SPAN
+> errors.
+     </P
+></LI
+><LI
+><P
+>      Fix race condition in which a hot-standby postmaster could fail to
+      shut down after receiving a smart-shutdown request (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix possible crash
+      when <CODE
+CLASS="FUNCTION"
+>pg_identify_object_as_address()</CODE
+> is given
+      invalid input (&Aacute;lvaro Herrera)
+     </P
+></LI
+><LI
+><P
+>      Tighten validation of encoded SCRAM-SHA-256 and MD5 passwords
+      (Jonathan Katz)
+     </P
+><P
+>      A password string that had the right initial characters could be
+      mistaken for one that is correctly hashed into SCRAM-SHA-256 or MD5
+      format.  The password would be accepted but would be unusable later.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of <TT
+CLASS="VARNAME"
+>lc_time</TT
+> settings that imply an
+      encoding different from the database's encoding (Juan Jos&eacute;
+      Santamar&iacute;a Flecha, Tom Lane)
+     </P
+><P
+>      Localized month or day names that include non-ASCII characters
+      previously caused unexpected errors or wrong output in such locales.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect <TT
+CLASS="VARNAME"
+>operator_precedence_warning</TT
+> checks
+      involving unary minus operators (Rikard Falkeborn)
+     </P
+></LI
+><LI
+><P
+>      Disallow <TT
+CLASS="LITERAL"
+>NaN</TT
+> as a value for floating-point server
+      parameters (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Rearrange <TT
+CLASS="COMMAND"
+>REINDEX</TT
+> processing to avoid assertion
+      failures when reindexing individual indexes
+      of <TT
+CLASS="STRUCTNAME"
+>pg_class</TT
+> (Andres Freund, Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix planner assertion failure for parameterized dummy paths (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Insert correct test function in the result
+      of <CODE
+CLASS="FUNCTION"
+>SnapBuildInitialSnapshot()</CODE
+> (Antonin Houska)
+     </P
+><P
+>      No core code cares about this, but some extensions do.
+     </P
+></LI
+><LI
+><P
+>      Fix intermittent <SPAN
+CLASS="QUOTE"
+>"could not reattach to shared memory"</SPAN
+>
+      session startup failures on Windows (Noah Misch)
+     </P
+><P
+>      A previously unrecognized source of these failures is creation of
+      thread stacks for a process's default thread pool.  Arrange for such
+      stacks to be allocated in a different memory region.
+     </P
+></LI
+><LI
+><P
+>      Fix error detection in directory scanning on Windows (Konstantin
+      Knizhnik)
+     </P
+><P
+>      Errors, such as lack of permissions to read the directory, were not
+      detected or reported correctly; instead the code silently acted as
+      though the directory were empty.
+     </P
+></LI
+><LI
+><P
+>      Fix grammar problems in <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> (Tom Lane)
+     </P
+><P
+>      A missing semicolon led to mistranslation
+      of <TT
+CLASS="LITERAL"
+>SET <TT
+CLASS="REPLACEABLE"
+><I
+>variable</I
+></TT
+> =
+      DEFAULT</TT
+> (but
+      not <TT
+CLASS="LITERAL"
+>SET <TT
+CLASS="REPLACEABLE"
+><I
+>variable</I
+></TT
+> TO
+      DEFAULT</TT
+>) in <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> programs,
+      producing syntactically invalid output that the server would reject.
+      Additionally, in a <TT
+CLASS="COMMAND"
+>DROP TYPE</TT
+> or <TT
+CLASS="COMMAND"
+>DROP
+      DOMAIN</TT
+> command that listed multiple type names, only the
+      first type name was actually processed.
+     </P
+></LI
+><LI
+><P
+>      Sync <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>'s syntax for <TT
+CLASS="COMMAND"
+>CREATE
+      TABLE AS</TT
+> with the server's (Daisuke Higuchi)
+     </P
+></LI
+><LI
+><P
+>      Fix possible buffer overruns in <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>'s
+      processing of include filenames (Liu Huailing, Fei Wu)
+     </P
+></LI
+><LI
+><P
+>      Avoid crash in <TT
+CLASS="FILENAME"
+>contrib/vacuumlo</TT
+> if
+      an <CODE
+CLASS="FUNCTION"
+>lo_unlink()</CODE
+> call failed (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Sync our copy of the timezone library with IANA tzcode release 2019a
+      (Tom Lane)
+     </P
+><P
+>      This corrects a small bug in <SPAN
+CLASS="APPLICATION"
+>zic</SPAN
+> that
+      caused it to output an incorrect year-2440 transition in
+      the <TT
+CLASS="LITERAL"
+>Africa/Casablanca</TT
+> zone, and adds support
+      for <SPAN
+CLASS="APPLICATION"
+>zic</SPAN
+>'s new <TT
+CLASS="OPTION"
+>-r</TT
+> option.
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2019a for DST law changes in Palestine and Metlakatla,
+      plus historical corrections for Israel.
+     </P
+><P
+>      <TT
+CLASS="LITERAL"
+>Etc/UCT</TT
+> is now a backward-compatibility link
+      to <TT
+CLASS="LITERAL"
+>Etc/UTC</TT
+>, instead of being a separate zone that
+      generates the abbreviation <TT
+CLASS="LITERAL"
+>UCT</TT
+>, which nowadays is
+      typically a typo.  <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> will still
+      accept <TT
+CLASS="LITERAL"
+>UCT</TT
+> as an input zone abbreviation, but it
+      won't output it.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-18.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-16.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.18</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.16</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

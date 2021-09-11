@@ -1,0 +1,710 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.14</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.15"
+HREF="release-9-5-15.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.13"
+HREF="release-9-5-13.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.15"
+HREF="release-9-5-15.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.13"
+HREF="release-9-5-13.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-14"
+>E.12. Release 9.5.14</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2018-08-09</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.13.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129072"
+>E.12.1. Migration to Version 9.5.14</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.13,
+    see <A
+HREF="release-9-5-13.html"
+>Section E.13</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129077"
+>E.12.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Fix failure to reset <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+>'s state fully
+      between connection attempts (Tom Lane)
+     </P
+><P
+>      An unprivileged user of <TT
+CLASS="FILENAME"
+>dblink</TT
+>
+      or <TT
+CLASS="FILENAME"
+>postgres_fdw</TT
+> could bypass the checks intended
+      to prevent use of server-side credentials, such as
+      a <TT
+CLASS="FILENAME"
+>~/.pgpass</TT
+> file owned by the operating-system
+      user running the server.  Servers allowing peer authentication on
+      local connections are particularly vulnerable.  Other attacks such
+      as SQL injection into a <TT
+CLASS="FILENAME"
+>postgres_fdw</TT
+> session
+      are also possible.
+      Attacking <TT
+CLASS="FILENAME"
+>postgres_fdw</TT
+> in this way requires the
+      ability to create a foreign server object with selected connection
+      parameters, but any user with access to <TT
+CLASS="FILENAME"
+>dblink</TT
+>
+      could exploit the problem.
+      In general, an attacker with the ability to select the connection
+      parameters for a <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+>-using application
+      could cause mischief, though other plausible attack scenarios are
+      harder to think of.
+      Our thanks to Andrew Krasichkov for reporting this issue.
+      (CVE-2018-10915)
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="LITERAL"
+>INSERT ... ON CONFLICT UPDATE</TT
+> through a view
+      that isn't just <TT
+CLASS="LITERAL"
+>SELECT * FROM ...</TT
+>
+      (Dean Rasheed, Amit Langote)
+     </P
+><P
+>      Erroneous expansion of an updatable view could lead to crashes
+      or <SPAN
+CLASS="QUOTE"
+>"attribute ... has the wrong type"</SPAN
+> errors, if the
+      view's <TT
+CLASS="LITERAL"
+>SELECT</TT
+> list doesn't match one-to-one with
+      the underlying table's columns.
+      Furthermore, this bug could be leveraged to allow updates of columns
+      that an attacking user lacks <TT
+CLASS="LITERAL"
+>UPDATE</TT
+> privilege for,
+      if that user has <TT
+CLASS="LITERAL"
+>INSERT</TT
+> and <TT
+CLASS="LITERAL"
+>UPDATE</TT
+>
+      privileges for some other column(s) of the table.
+      Any user could also use it for disclosure of server memory.
+      (CVE-2018-10925)
+     </P
+></LI
+><LI
+><P
+>      Ensure that updates to the <TT
+CLASS="STRUCTFIELD"
+>relfrozenxid</TT
+>
+      and <TT
+CLASS="STRUCTFIELD"
+>relminmxid</TT
+> values
+      for <SPAN
+CLASS="QUOTE"
+>"nailed"</SPAN
+> system catalogs are processed in a timely
+      fashion (Andres Freund)
+     </P
+><P
+>      Overoptimistic caching rules could prevent these updates from being
+      seen by other sessions, leading to spurious errors and/or data
+      corruption.  The problem was significantly worse for shared catalogs,
+      such as <TT
+CLASS="STRUCTNAME"
+>pg_authid</TT
+>, because the stale cache
+      data could persist into new sessions as well as existing ones.
+     </P
+></LI
+><LI
+><P
+>      Fix case where a freshly-promoted standby crashes before having
+      completed its first post-recovery checkpoint (Michael Paquier, Kyotaro
+      Horiguchi, Pavan Deolasee, &Aacute;lvaro Herrera)
+     </P
+><P
+>      This led to a situation where the server did not think it had reached
+      a consistent database state during subsequent WAL replay, preventing
+      restart.
+     </P
+></LI
+><LI
+><P
+>      Avoid emitting a bogus WAL record when recycling an all-zero btree
+      page (Amit Kapila)
+     </P
+><P
+>      This mistake has been seen to cause assertion failures, and
+      potentially it could result in unnecessary query cancellations on hot
+      standby servers.
+     </P
+></LI
+><LI
+><P
+>      During WAL replay, guard against corrupted record lengths exceeding
+      1GB (Michael Paquier)
+     </P
+><P
+>      Treat such a case as corrupt data.  Previously, the code would try to
+      allocate space and get a hard error, making recovery impossible.
+     </P
+></LI
+><LI
+><P
+>      When ending recovery, delay writing the timeline history file as long
+      as possible (Heikki Linnakangas)
+     </P
+><P
+>      This avoids some situations where a failure during recovery cleanup
+      (such as a problem with a two-phase state file) led to inconsistent
+      timeline state on-disk.
+     </P
+></LI
+><LI
+><P
+>      Improve performance of WAL replay for transactions that drop many
+      relations (Fujii Masao)
+     </P
+><P
+>      This change reduces the number of times that shared buffers are
+      scanned, so that it is of most benefit when that setting is large.
+     </P
+></LI
+><LI
+><P
+>      Improve performance of lock releasing in standby server WAL replay
+      (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      Make logical WAL senders report streaming state correctly (Simon
+      Riggs, Sawada Masahiko)
+     </P
+><P
+>      The code previously mis-detected whether or not it had caught up with
+      the upstream server.
+     </P
+></LI
+><LI
+><P
+>      Fix bugs in snapshot handling during logical decoding, allowing wrong
+      decoding results in rare cases (Arseny Sher, &Aacute;lvaro Herrera)
+     </P
+></LI
+><LI
+><P
+>      Ensure a table's cached index list is correctly rebuilt after an index
+      creation fails partway through (Peter Geoghegan)
+     </P
+><P
+>      Previously, the failed index's OID could remain in the list, causing
+      problems later in the same session.
+     </P
+></LI
+><LI
+><P
+>      Fix mishandling of empty uncompressed posting list pages in GIN
+      indexes (Sivasubramanian Ramasubramanian, Alexander Korotkov)
+     </P
+><P
+>      This could result in an assertion failure after pg_upgrade of a
+      pre-9.4 GIN index (9.4 and later will not create such pages).
+     </P
+></LI
+><LI
+><P
+>      Ensure that <TT
+CLASS="COMMAND"
+>VACUUM</TT
+> will respond to signals
+      within btree page deletion loops (Andres Freund)
+     </P
+><P
+>      Corrupted btree indexes could result in an infinite loop here, and
+      that previously wasn't interruptible without forcing a crash.
+     </P
+></LI
+><LI
+><P
+>      Fix misoptimization of equivalence classes involving composite-type
+      columns (Tom Lane)
+     </P
+><P
+>      This resulted in failure to recognize that an index on a composite
+      column could provide the sort order needed for a mergejoin on that
+      column.
+     </P
+></LI
+><LI
+><P
+>      Fix SQL-standard <TT
+CLASS="LITERAL"
+>FETCH FIRST</TT
+> syntax to allow
+      parameters (<TT
+CLASS="LITERAL"
+>$<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+>), as the
+      standard expects (Andrew Gierth)
+     </P
+></LI
+><LI
+><P
+>      Fix failure to schema-qualify some object names
+      in <CODE
+CLASS="FUNCTION"
+>getObjectDescription</CODE
+> output
+      (Kyotaro Horiguchi, Tom Lane)
+     </P
+><P
+>      Names of collations, conversions, and text search objects
+      were not schema-qualified when they should be.
+     </P
+></LI
+><LI
+><P
+>      Widen <TT
+CLASS="COMMAND"
+>COPY FROM</TT
+>'s current-line-number counter
+      from 32 to 64 bits (David Rowley)
+     </P
+><P
+>      This avoids two problems with input exceeding 4G lines: <TT
+CLASS="LITERAL"
+>COPY
+      FROM WITH HEADER</TT
+> would drop a line every 4G lines, not only
+      the first line, and error reports could show a wrong line number.
+     </P
+></LI
+><LI
+><P
+>      Add a string freeing function
+      to <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>'s <TT
+CLASS="FILENAME"
+>pgtypes</TT
+>
+      library, so that cross-module memory management problems can be
+      avoided on Windows (Takayuki Tsunakawa)
+     </P
+><P
+>      On Windows, crashes can ensue if the <CODE
+CLASS="FUNCTION"
+>free</CODE
+> call
+      for a given chunk of memory is not made from the same DLL
+      that <CODE
+CLASS="FUNCTION"
+>malloc</CODE
+>'ed the memory.
+      The <TT
+CLASS="FILENAME"
+>pgtypes</TT
+> library sometimes returns strings
+      that it expects the caller to free, making it impossible to follow
+      this rule.  Add a <CODE
+CLASS="FUNCTION"
+>PGTYPESchar_free()</CODE
+> function
+      that just wraps <CODE
+CLASS="FUNCTION"
+>free</CODE
+>, allowing applications
+      to follow this rule.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>'s support for <TT
+CLASS="TYPE"
+>long
+      long</TT
+> variables on Windows, as well as other platforms that
+      declare <CODE
+CLASS="FUNCTION"
+>strtoll</CODE
+>/<CODE
+CLASS="FUNCTION"
+>strtoull</CODE
+>
+      nonstandardly or not at all (Dang Minh Huong, Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix misidentification of SQL statement type in PL/pgSQL, when a rule
+      change causes a change in the semantics of a statement intra-session
+      (Tom Lane)
+     </P
+><P
+>      This error led to assertion failures, or in rare cases, failure to
+      enforce the <TT
+CLASS="LITERAL"
+>INTO STRICT</TT
+> option as expected.
+     </P
+></LI
+><LI
+><P
+>      Fix password prompting in client programs so that echo is properly
+      disabled on Windows when <TT
+CLASS="LITERAL"
+>stdin</TT
+> is not the
+      terminal (Matthew Stickney)
+     </P
+></LI
+><LI
+><P
+>      Further fix mis-quoting of values for list-valued GUC variables in
+      dumps (Tom Lane)
+     </P
+><P
+>      The previous fix for quoting of <TT
+CLASS="VARNAME"
+>search_path</TT
+> and
+      other list-valued variables in <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>
+      output turned out to misbehave for empty-string list elements, and it
+      risked truncation of long file paths.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>'s failure to
+      dump <TT
+CLASS="LITERAL"
+>REPLICA IDENTITY</TT
+> properties for constraint
+      indexes (Tom Lane)
+     </P
+><P
+>      Manually created unique indexes were properly marked, but not those
+      created by declaring <TT
+CLASS="LITERAL"
+>UNIQUE</TT
+> or <TT
+CLASS="LITERAL"
+>PRIMARY
+      KEY</TT
+> constraints.
+     </P
+></LI
+><LI
+><P
+>      Make <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> check that the old server
+      was shut down cleanly (Bruce Momjian)
+     </P
+><P
+>      The previous check could be fooled by an immediate-mode shutdown.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="FILENAME"
+>contrib/hstore_plperl</TT
+> to look through Perl
+      scalar references, and to not crash if it doesn't find a hash
+      reference where it expects one (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix crash in <TT
+CLASS="FILENAME"
+>contrib/ltree</TT
+>'s
+      <CODE
+CLASS="FUNCTION"
+>lca()</CODE
+> function when the input array is empty
+      (Pierre Ducroquet)
+     </P
+></LI
+><LI
+><P
+>      Fix various error-handling code paths in which an incorrect error code
+      might be reported (Michael Paquier, Tom Lane, Magnus Hagander)
+     </P
+></LI
+><LI
+><P
+>      Rearrange makefiles to ensure that programs link to freshly-built
+      libraries (such as <TT
+CLASS="FILENAME"
+>libpq.so</TT
+>) rather than ones
+      that might exist in the system library directories (Tom Lane)
+     </P
+><P
+>      This avoids problems when building on platforms that supply old copies
+      of <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> libraries.
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2018e for DST law changes in North Korea, plus historical
+      corrections for Czechoslovakia.
+     </P
+><P
+>      This update includes a redefinition of <SPAN
+CLASS="QUOTE"
+>"daylight savings"</SPAN
+>
+      in Ireland, as well as for some past years in Namibia and
+      Czechoslovakia.  In those jurisdictions, legally standard time is
+      observed in summer, and daylight savings time in winter, so that the
+      daylight savings offset is one hour behind standard time not one hour
+      ahead.  This does not affect either the actual UTC offset or the
+      timezone abbreviations in use; the only known effect is that
+      the <TT
+CLASS="STRUCTFIELD"
+>is_dst</TT
+> column in
+      the <TT
+CLASS="STRUCTNAME"
+>pg_timezone_names</TT
+> view will now be true
+      in winter and false in summer in these cases.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-15.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-13.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.15</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.13</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,682 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.11</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.12"
+HREF="release-9-5-12.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.10"
+HREF="release-9-5-10.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.12"
+HREF="release-9-5-12.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.10"
+HREF="release-9-5-10.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-11"
+>E.15. Release 9.5.11</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2018-02-08</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.10.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129468"
+>E.15.1. Migration to Version 9.5.11</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.10,
+    see <A
+HREF="release-9-5-10.html"
+>Section E.16</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129473"
+>E.15.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Ensure that all temporary files made
+      by <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> are non-world-readable
+      (Tom Lane, Noah Misch)
+     </P
+><P
+>      <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> normally restricts its
+      temporary files to be readable and writable only by the calling user.
+      But the temporary file containing <TT
+CLASS="LITERAL"
+>pg_dumpall -g</TT
+>
+      output would be group- or world-readable, or even writable, if the
+      user's <TT
+CLASS="LITERAL"
+>umask</TT
+> setting allows.  In typical usage on
+      multi-user machines, the <TT
+CLASS="LITERAL"
+>umask</TT
+> and/or the working
+      directory's permissions would be tight enough to prevent problems;
+      but there may be people using <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>
+      in scenarios where this oversight would permit disclosure of database
+      passwords to unfriendly eyes.
+      (CVE-2018-1053)
+     </P
+></LI
+><LI
+><P
+>      Fix vacuuming of tuples that were updated while key-share locked
+      (Andres Freund, &Aacute;lvaro Herrera)
+     </P
+><P
+>      In some cases <TT
+CLASS="COMMAND"
+>VACUUM</TT
+> would fail to remove such
+      tuples even though they are now dead, leading to assorted data
+      corruption scenarios.
+     </P
+></LI
+><LI
+><P
+>      Fix inadequate buffer locking in some LSN fetches (Jacob Champion,
+      Asim Praveen, Ashwin Agrawal)
+     </P
+><P
+>      These errors could result in misbehavior under concurrent load.
+      The potential consequences have not been characterized fully.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect query results from cases involving flattening of
+      subqueries whose outputs are used in <TT
+CLASS="LITERAL"
+>GROUPING SETS</TT
+>
+      (Heikki Linnakangas)
+     </P
+></LI
+><LI
+><P
+>      Avoid unnecessary failure in a query on an inheritance tree that
+      occurs concurrently with some child table being removed from the tree
+      by <TT
+CLASS="COMMAND"
+>ALTER TABLE NO INHERIT</TT
+> (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix spurious deadlock failures when multiple sessions are
+      running <TT
+CLASS="COMMAND"
+>CREATE INDEX CONCURRENTLY</TT
+> (Jeff Janes)
+     </P
+></LI
+><LI
+><P
+>      Fix failures when an inheritance tree contains foreign child tables
+      (Etsuro Fujita)
+     </P
+><P
+>      A mix of regular and foreign tables in an inheritance tree resulted in
+      creation of incorrect plans for <TT
+CLASS="COMMAND"
+>UPDATE</TT
+>
+      and <TT
+CLASS="COMMAND"
+>DELETE</TT
+> queries.  This led to visible failures in
+      some cases, notably when there are row-level triggers on a foreign
+      child table.
+     </P
+></LI
+><LI
+><P
+>      Repair failure with correlated sub-<TT
+CLASS="LITERAL"
+>SELECT</TT
+>
+      inside <TT
+CLASS="LITERAL"
+>VALUES</TT
+> inside a <TT
+CLASS="LITERAL"
+>LATERAL</TT
+>
+      subquery (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="QUOTE"
+>"could not devise a query plan for the given query"</SPAN
+>
+      planner failure for some cases involving nested <TT
+CLASS="LITERAL"
+>UNION
+      ALL</TT
+> inside a lateral subquery (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix logical decoding to correctly clean up disk files for crashed
+      transactions (Atsushi Torikoshi)
+     </P
+><P
+>      Logical decoding may spill WAL records to disk for transactions
+      generating many WAL records.  Normally these files are cleaned up
+      after the transaction's commit or abort record arrives; but if
+      no such record is ever seen, the removal code misbehaved.
+     </P
+></LI
+><LI
+><P
+>      Fix walsender timeout failure and failure to respond to interrupts
+      when processing a large transaction (Petr Jelinek)
+     </P
+></LI
+><LI
+><P
+>      Fix <CODE
+CLASS="FUNCTION"
+>has_sequence_privilege()</CODE
+> to
+      support <TT
+CLASS="LITERAL"
+>WITH GRANT OPTION</TT
+> tests,
+      as other privilege-testing functions do (Joe Conway)
+     </P
+></LI
+><LI
+><P
+>      In databases using UTF8 encoding, ignore any XML declaration that
+      asserts a different encoding (Pavel Stehule, Noah Misch)
+     </P
+><P
+>      We always store XML strings in the database encoding, so allowing
+      libxml to act on a declaration of another encoding gave wrong results.
+      In encodings other than UTF8, we don't promise to support non-ASCII
+      XML data anyway, so retain the previous behavior for bug compatibility.
+      This change affects only <CODE
+CLASS="FUNCTION"
+>xpath()</CODE
+> and related
+      functions; other XML code paths already acted this way.
+     </P
+></LI
+><LI
+><P
+>      Provide for forward compatibility with future minor protocol versions
+      (Robert Haas, Badrul Chowdhury)
+     </P
+><P
+>      Up to now, <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> servers simply
+      rejected requests to use protocol versions newer than 3.0, so that
+      there was no functional difference between the major and minor parts
+      of the protocol version number.  Allow clients to request versions 3.x
+      without failing, sending back a message showing that the server only
+      understands 3.0.  This makes no difference at the moment, but
+      back-patching this change should allow speedier introduction of future
+      minor protocol upgrades.
+     </P
+></LI
+><LI
+><P
+>      Cope with failure to start a parallel worker process
+      (Amit Kapila, Robert Haas)
+     </P
+><P
+>      Parallel query previously tended to hang indefinitely if a worker
+      could not be started, as the result of <TT
+CLASS="LITERAL"
+>fork()</TT
+>
+      failure or other low-probability problems.
+     </P
+></LI
+><LI
+><P
+>      Avoid unsafe alignment assumptions when working
+      with <TT
+CLASS="TYPE"
+>__int128</TT
+> (Tom Lane)
+     </P
+><P
+>      Typically, compilers assume that <TT
+CLASS="TYPE"
+>__int128</TT
+> variables are
+      aligned on 16-byte boundaries, but our memory allocation
+      infrastructure isn't prepared to guarantee that, and increasing the
+      setting of MAXALIGN seems infeasible for multiple reasons.  Adjust the
+      code to allow use of <TT
+CLASS="TYPE"
+>__int128</TT
+> only when we can tell the
+      compiler to assume lesser alignment.  The only known symptom of this
+      problem so far is crashes in some parallel aggregation queries.
+     </P
+></LI
+><LI
+><P
+>      Prevent stack-overflow crashes when planning extremely deeply
+      nested set operations
+      (<TT
+CLASS="LITERAL"
+>UNION</TT
+>/<TT
+CLASS="LITERAL"
+>INTERSECT</TT
+>/<TT
+CLASS="LITERAL"
+>EXCEPT</TT
+>)
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix null-pointer crashes for some types of LDAP URLs appearing
+      in <TT
+CLASS="FILENAME"
+>pg_hba.conf</TT
+> (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      Fix sample <CODE
+CLASS="FUNCTION"
+>INSTR()</CODE
+> functions in the PL/pgSQL
+      documentation (Yugo Nagata, Tom Lane)
+     </P
+><P
+>      These functions are stated to
+      be <SPAN
+CLASS="TRADEMARK"
+>Oracle</SPAN
+>&reg; compatible, but
+      they weren't exactly.  In particular, there was a discrepancy in the
+      interpretation of a negative third parameter: Oracle thinks that a
+      negative value indicates the last place where the target substring can
+      begin, whereas our functions took it as the last place where the
+      target can end.  Also, Oracle throws an error for a zero or negative
+      fourth parameter, whereas our functions returned zero.
+     </P
+><P
+>      The sample code has been adjusted to match Oracle's behavior more
+      precisely.  Users who have copied this code into their applications
+      may wish to update their copies.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> to make ACL (permissions),
+      comment, and security label entries reliably identifiable in archive
+      output formats (Tom Lane)
+     </P
+><P
+>      The <SPAN
+CLASS="QUOTE"
+>"tag"</SPAN
+> portion of an ACL archive entry was usually
+      just the name of the associated object.  Make it start with the object
+      type instead, bringing ACLs into line with the convention already used
+      for comment and security label archive entries.  Also, fix the
+      comment and security label entries for the whole database, if present,
+      to make their tags start with <TT
+CLASS="LITERAL"
+>DATABASE</TT
+> so that they
+      also follow this convention.  This prevents false matches in code that
+      tries to identify large-object-related entries by seeing if the tag
+      starts with <TT
+CLASS="LITERAL"
+>LARGE OBJECT</TT
+>.  That could have resulted
+      in misclassifying entries as data rather than schema, with undesirable
+      results in a schema-only or data-only dump.
+     </P
+><P
+>      Note that this change has user-visible results in the output
+      of <TT
+CLASS="COMMAND"
+>pg_restore --list</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Rename <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+>'s
+      <CODE
+CLASS="FUNCTION"
+>copy_file_range</CODE
+> function to avoid conflict
+      with new Linux system call of that name (Andres Freund)
+     </P
+><P
+>      This change prevents build failures with newer glibc versions.
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>, detect indicator arrays that do
+      not have the correct length and report an error (David Rader)
+     </P
+></LI
+><LI
+><P
+>      Avoid triggering a libc assertion
+      in <TT
+CLASS="FILENAME"
+>contrib/hstore</TT
+>, due to use
+      of <CODE
+CLASS="FUNCTION"
+>memcpy()</CODE
+> with equal source and destination
+      pointers (Tomas Vondra)
+     </P
+></LI
+><LI
+><P
+>      Provide modern examples of how to auto-start Postgres on macOS
+      (Tom Lane)
+     </P
+><P
+>      The scripts in <TT
+CLASS="FILENAME"
+>contrib/start-scripts/osx</TT
+> use
+      infrastructure that's been deprecated for over a decade, and which no
+      longer works at all in macOS releases of the last couple of years.
+      Add a new subdirectory <TT
+CLASS="FILENAME"
+>contrib/start-scripts/macos</TT
+>
+      containing scripts that use the newer <SPAN
+CLASS="APPLICATION"
+>launchd</SPAN
+>
+      infrastructure.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect selection of configuration-specific libraries for
+      OpenSSL on Windows (Andrew Dunstan)
+     </P
+></LI
+><LI
+><P
+>      Support linking to MinGW-built versions of libperl (Noah Misch)
+     </P
+><P
+>      This allows building PL/Perl with some common Perl distributions for
+      Windows.
+     </P
+></LI
+><LI
+><P
+>      Fix MSVC build to test whether 32-bit libperl
+      needs <TT
+CLASS="LITERAL"
+>-D_USE_32BIT_TIME_T</TT
+> (Noah Misch)
+     </P
+><P
+>      Available Perl distributions are inconsistent about what they expect,
+      and lack any reliable means of reporting it, so resort to a build-time
+      test on what the library being used actually does.
+     </P
+></LI
+><LI
+><P
+>      On Windows, install the crash dump handler earlier in postmaster
+      startup (Takayuki Tsunakawa)
+     </P
+><P
+>      This may allow collection of a core dump for some early-startup
+      failures that did not produce a dump before.
+     </P
+></LI
+><LI
+><P
+>      On Windows, avoid encoding-conversion-related crashes when emitting
+      messages very early in postmaster startup (Takayuki Tsunakawa)
+     </P
+></LI
+><LI
+><P
+>      Use our existing Motorola 68K spinlock code on OpenBSD as
+      well as NetBSD (David Carlier)
+     </P
+></LI
+><LI
+><P
+>      Add support for spinlocks on Motorola 88K (David Carlier)
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2018c for DST law changes in Brazil, Sao Tome and Principe,
+      plus historical corrections for Bolivia, Japan, and South Sudan.
+      The <TT
+CLASS="LITERAL"
+>US/Pacific-New</TT
+> zone has been removed (it was
+      only an alias for <TT
+CLASS="LITERAL"
+>America/Los_Angeles</TT
+> anyway).
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-12.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-10.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.12</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.10</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

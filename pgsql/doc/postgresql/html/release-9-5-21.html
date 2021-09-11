@@ -1,0 +1,598 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.21</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.22"
+HREF="release-9-5-22.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.20"
+HREF="release-9-5-20.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.22"
+HREF="release-9-5-22.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.20"
+HREF="release-9-5-20.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-21"
+>E.5. Release 9.5.21</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2020-02-13</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.20.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127946"
+>E.5.1. Migration to Version 9.5.21</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.20,
+    see <A
+HREF="release-9-5-20.html"
+>Section E.6</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127951"
+>E.5.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Avoid failure in logical decoding when a large transaction must be
+      spilled into many separate temporary files (Amit Khandekar)
+     </P
+></LI
+><LI
+><P
+>      Fix failure in logical replication publisher after a database crash
+      and restart (Vignesh C)
+     </P
+></LI
+><LI
+><P
+>      Avoid memory leak when there are no free dynamic shared memory slots
+      (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      Ignore the <TT
+CLASS="LITERAL"
+>CONCURRENTLY</TT
+> option when performing an
+      index creation, drop, or rebuild on a temporary table (Michael
+      Paquier, Heikki Linnakangas, Andres Freund)
+     </P
+><P
+>      This avoids strange failures if the temporary table has
+      an <TT
+CLASS="LITERAL"
+>ON COMMIT</TT
+> action.  There is no benefit in
+      using <TT
+CLASS="LITERAL"
+>CONCURRENTLY</TT
+> for a temporary table anyway,
+      since other sessions cannot access the table, making the extra
+      processing pointless.
+     </P
+></LI
+><LI
+><P
+>      Fix possible failure when resetting expression indexes on temporary
+      tables that are marked <TT
+CLASS="LITERAL"
+>ON COMMIT DELETE ROWS</TT
+>
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix possible crash in BRIN index operations
+      with <TT
+CLASS="TYPE"
+>box</TT
+>, <TT
+CLASS="TYPE"
+>range</TT
+> and <TT
+CLASS="TYPE"
+>inet</TT
+> data
+      types (Heikki Linnakangas)
+     </P
+></LI
+><LI
+><P
+>      Fix handling of deleted pages in GIN indexes (Alexander Korotkov)
+     </P
+><P
+>      Avoid possible deadlocks, incorrect updates of a deleted page's
+      state, and failure to traverse through a recently-deleted page.
+     </P
+></LI
+><LI
+><P
+>      Fix possible crash with a SubPlan (sub-<TT
+CLASS="LITERAL"
+>SELECT</TT
+>)
+      within a multi-row <TT
+CLASS="LITERAL"
+>VALUES</TT
+> list (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix unlikely crash with pass-by-reference aggregate transition
+      states (Andres Freund, Teodor Sigaev)
+     </P
+></LI
+><LI
+><P
+>      Improve error reporting in <CODE
+CLASS="FUNCTION"
+>to_date()</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>to_timestamp()</CODE
+>
+      (Tom Lane, &Aacute;lvaro Herrera)
+     </P
+><P
+>      Reports about incorrect month or day names in input strings could
+      truncate the input in the middle of a multi-byte character, leading
+      to an improperly encoded error message that could cause follow-on
+      failures.  Truncate at the next whitespace instead.
+     </P
+></LI
+><LI
+><P
+>      Fix off-by-one result for <TT
+CLASS="LITERAL"
+>EXTRACT(ISOYEAR
+      FROM <TT
+CLASS="REPLACEABLE"
+><I
+>timestamp</I
+></TT
+>)</TT
+> for BC dates
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Avoid stack overflow in <TT
+CLASS="LITERAL"
+>information_schema</TT
+> views
+      when a self-referential view exists in the system catalogs
+      (Tom Lane)
+     </P
+><P
+>      A self-referential view can't work; it will always result in
+      infinite recursion.  We handled that situation correctly when
+      trying to execute the view, but not when inquiring whether it is
+      automatically updatable.
+     </P
+></LI
+><LI
+><P
+>      Improve performance of hash joins with very large inner relations
+      (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      Fix edge-case crashes and misestimations in selectivity calculations
+      for the <TT
+CLASS="LITERAL"
+>&lt;@</TT
+> and <TT
+CLASS="LITERAL"
+>@&gt;</TT
+> range
+      operators (Michael Paquier, Andrey Borodin, Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Improve error reporting for attempts to use automatic updating of
+      views with conditional <TT
+CLASS="LITERAL"
+>INSTEAD</TT
+> rules (Dean Rasheed)
+     </P
+><P
+>      This has never been supported, but previously the error was thrown
+      only at execution time, so that it could be masked by planner errors.
+     </P
+></LI
+><LI
+><P
+>      Prevent a composite type from being included in itself indirectly
+      via a range type (Tom Lane, Julien Rouhaud)
+     </P
+></LI
+><LI
+><P
+>      Fix error reporting for index expressions of prohibited types
+      (Amit Langote)
+     </P
+></LI
+><LI
+><P
+>      Fix dumping of views that contain only a <TT
+CLASS="LITERAL"
+>VALUES</TT
+>
+      list to handle cases where a view output column has been renamed
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Allow <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+> to parse all GSS-related
+      connection parameters even when the GSSAPI code hasn't been compiled
+      in (Tom Lane)
+     </P
+><P
+>      This makes the behavior similar to our SSL support, where it was
+      long ago deemed to be a good idea to always accept all the related
+      parameters, even if some are ignored or restricted due to lack of
+      the feature in a particular build.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect handling of <TT
+CLASS="LITERAL"
+>%b</TT
+>
+      and <TT
+CLASS="LITERAL"
+>%B</TT
+> format codes
+      in <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+>'s
+      <CODE
+CLASS="FUNCTION"
+>PGTYPEStimestamp_fmt_asc()</CODE
+> function
+      (Tomas Vondra)
+     </P
+><P
+>      Due to an off-by-one error, these codes would print the wrong month
+      name, or possibly crash.
+     </P
+></LI
+><LI
+><P
+>      Fix
+      parallel <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>/<SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>
+      to more gracefully handle failure to create worker processes
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Prevent possible crash or lockup when attempting to terminate a
+      parallel <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>/<SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>
+      run via a signal (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>, look inside arrays and
+      ranges while searching for non-upgradable data types in tables
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Apply more thorough syntax checking
+      to <SPAN
+CLASS="APPLICATION"
+>createuser</SPAN
+>'s
+      <TT
+CLASS="OPTION"
+>--connection-limit</TT
+> option (&Aacute;lvaro Herrera)
+     </P
+></LI
+><LI
+><P
+>      In <TT
+CLASS="FILENAME"
+>contrib/dict_int</TT
+>,
+      reject <TT
+CLASS="VARNAME"
+>maxlen</TT
+> settings less than one
+      (Tomas Vondra)
+     </P
+><P
+>      This prevents a possible crash with silly settings for that parameter.
+     </P
+></LI
+><LI
+><P
+>      Disallow NULL category values
+      in <TT
+CLASS="FILENAME"
+>contrib/tablefunc</TT
+>'s
+      <CODE
+CLASS="FUNCTION"
+>crosstab()</CODE
+> function (Joe Conway)
+     </P
+><P
+>      This case never worked usefully, and it would crash on some
+      platforms.
+     </P
+></LI
+><LI
+><P
+>      Mark some timeout and statistics-tracking GUC variables
+      as <TT
+CLASS="LITERAL"
+>PGDLLIMPORT</TT
+>, to allow extensions to access
+      them on Windows (Pascal Legrand)
+     </P
+><P
+>      This applies to
+      <TT
+CLASS="LITERAL"
+>lock_timeout</TT
+>,
+      <TT
+CLASS="LITERAL"
+>statement_timeout</TT
+>,
+      <TT
+CLASS="LITERAL"
+>track_activities</TT
+>,
+      <TT
+CLASS="LITERAL"
+>track_counts</TT
+>, and
+      <TT
+CLASS="LITERAL"
+>track_functions</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Fix race condition that led to delayed delivery of interprocess
+      signals on Windows (Amit Kapila)
+     </P
+><P
+>      This caused visible timing oddities in <TT
+CLASS="COMMAND"
+>NOTIFY</TT
+>,
+      and perhaps other misbehavior.
+     </P
+></LI
+><LI
+><P
+>      On Windows, retry a few times after
+      an <TT
+CLASS="LITERAL"
+>ERROR_ACCESS_DENIED</TT
+> file access failure
+      (Alexander Lakhin, Tom Lane)
+     </P
+><P
+>      This helps cope with cases where a file open attempt fails because
+      the targeted file is flagged for deletion but not yet actually gone.
+      <SPAN
+CLASS="APPLICATION"
+>pg_ctl</SPAN
+>, for example, frequently failed
+      with such an error when probing to see if the postmaster had shut
+      down yet.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-22.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-20.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.22</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.20</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

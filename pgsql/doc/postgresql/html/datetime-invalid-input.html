@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Handling of Invalid or Ambiguous Timestamps</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Date/Time Support"
+HREF="datetime-appendix.html"><LINK
+REL="PREVIOUS"
+TITLE="Date/Time Input Interpretation"
+HREF="datetime-input-rules.html"><LINK
+REL="NEXT"
+TITLE="Date/Time Key Words"
+HREF="datetime-keywords.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Date/Time Input Interpretation"
+HREF="datetime-input-rules.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="datetime-appendix.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix B. Date/Time Support</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Date/Time Key Words"
+HREF="datetime-keywords.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="DATETIME-INVALID-INPUT"
+>B.2. Handling of Invalid or Ambiguous Timestamps</A
+></H1
+><P
+>    Ordinarily, if a date/time string is syntactically valid but contains
+    out-of-range field values, an error will be thrown.  For example, input
+    specifying the 31st of February will be rejected.
+   </P
+><P
+>    During a daylight-savings-time transition, it is possible for a
+    seemingly valid timestamp string to represent a nonexistent or ambiguous
+    timestamp.  Such cases are not rejected; the ambiguity is resolved by
+    determining which UTC offset to apply.  For example, supposing that the
+    <A
+HREF="runtime-config-client.html#GUC-TIMEZONE"
+>TimeZone</A
+> parameter is set
+    to <TT
+CLASS="LITERAL"
+>America/New_York</TT
+>, consider
+</P><PRE
+CLASS="PROGRAMLISTING"
+>=&gt; SELECT '2018-03-11 02:30'::timestamptz;
+      timestamptz
+------------------------
+ 2018-03-11 03:30:00-04
+(1 row)</PRE
+><P>
+    Because that day was a spring-forward transition date in that time zone,
+    there was no civil time instant 2:30AM; clocks jumped forward from 2AM
+    EST to 3AM EDT.  <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> interprets the
+    given time as if it were standard time (UTC-5), which then renders as
+    3:30AM EDT (UTC-4).
+   </P
+><P
+>    Conversely, consider the behavior during a fall-back transition:
+</P><PRE
+CLASS="PROGRAMLISTING"
+>=&gt; SELECT '2018-11-04 02:30'::timestamptz;
+      timestamptz
+------------------------
+ 2018-11-04 02:30:00-05
+(1 row)</PRE
+><P>
+    On that date, there were two possible interpretations of 2:30AM; there
+    was 2:30AM EDT, and then an hour later after the reversion to standard
+    time, there was 2:30AM EST.
+    Again, <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> interprets the given time
+    as if it were standard time (UTC-5).  We can force the matter by
+    specifying daylight-savings time:
+</P><PRE
+CLASS="PROGRAMLISTING"
+>=&gt; SELECT '2018-11-04 02:30 EDT'::timestamptz;
+      timestamptz
+------------------------
+ 2018-11-04 01:30:00-05
+(1 row)</PRE
+><P>
+    This timestamp could validly be rendered as either 2:30 UTC-4 or
+    1:30 UTC-5; the timestamp output code chooses the latter.
+   </P
+><P
+>    The precise rule that is applied in such cases is that an invalid
+    timestamp that appears to fall within a jump-forward daylight savings
+    transition is assigned the UTC offset that prevailed in the time zone
+    just before the transition, while an ambiguous timestamp that could fall
+    on either side of a jump-back transition is assigned the UTC offset that
+    prevailed just after the transition.  In most time zones this is
+    equivalent to saying that <SPAN
+CLASS="QUOTE"
+>"the standard-time interpretation is
+    preferred when in doubt"</SPAN
+>.
+   </P
+><P
+>    In all cases, the UTC offset associated with a timestamp can be
+    specified explicitly, using either a numeric UTC offset or a time zone
+    abbreviation that corresponds to a fixed UTC offset.  The rule just
+    given applies only when it is necessary to infer a UTC offset for a time
+    zone in which the offset varies.
+   </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="datetime-input-rules.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="datetime-keywords.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Date/Time Input Interpretation</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="datetime-appendix.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Date/Time Key Words</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,818 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.24</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.25"
+HREF="release-9-5-25.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.23"
+HREF="release-9-5-23.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.25"
+HREF="release-9-5-25.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.23"
+HREF="release-9-5-23.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-24"
+>E.2. Release 9.5.24</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2020-11-12</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.23.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><P
+>   The <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> community will stop
+   releasing updates for the 9.5.X release series in February 2021.
+   Users are encouraged to update to a newer release branch soon.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127466"
+>E.2.1. Migration to Version 9.5.24</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.20,
+    see <A
+HREF="release-9-5-20.html"
+>Section E.6</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN127471"
+>E.2.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Block <TT
+CLASS="COMMAND"
+>DECLARE CURSOR ... WITH HOLD</TT
+> and firing of
+      deferred triggers within index expressions and materialized view
+      queries (Noah Misch)
+     </P
+><P
+>      This is essentially a leak in the <SPAN
+CLASS="QUOTE"
+>"security restricted
+      operation"</SPAN
+> sandbox mechanism.  An attacker having permission
+      to create non-temporary SQL objects could parlay this leak to
+      execute arbitrary SQL code as a superuser.
+     </P
+><P
+>      The <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> Project thanks
+      Etienne Stalmans for reporting this problem.
+      (CVE-2020-25695)
+     </P
+></LI
+><LI
+><P
+>      Fix usage of complex connection-string parameters
+      in <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>,
+      <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>,
+      <SPAN
+CLASS="APPLICATION"
+>clusterdb</SPAN
+>,
+      <SPAN
+CLASS="APPLICATION"
+>reindexdb</SPAN
+>,
+      and <SPAN
+CLASS="APPLICATION"
+>vacuumdb</SPAN
+> (Tom Lane)
+     </P
+><P
+>      The <TT
+CLASS="OPTION"
+>-d</TT
+> parameter
+      of <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>
+      and <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>, or
+      the <TT
+CLASS="OPTION"
+>--maintenance-db</TT
+> parameter of the other
+      programs mentioned, can be a <SPAN
+CLASS="QUOTE"
+>"connection string"</SPAN
+>
+      containing multiple connection parameters rather than just a
+      database name.  In cases where these programs need to initiate
+      additional connections, such as parallel processing or processing of
+      multiple databases, the connection string was forgotten and just the
+      basic connection parameters (database name, host, port, and
+      username) were used for the additional connections.  This could lead
+      to connection failures if the connection string included any other
+      essential information, such as non-default SSL or GSS parameters.
+      Worse, the connection might succeed but not be encrypted as
+      intended, or be vulnerable to man-in-the-middle attacks that the
+      intended connection parameters would have prevented.
+      (CVE-2020-25694)
+     </P
+></LI
+><LI
+><P
+>      When <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>'s <TT
+CLASS="COMMAND"
+>\connect</TT
+>
+      command re-uses connection parameters, ensure that all
+      non-overridden parameters from a previous connection string are
+      re-used (Tom Lane)
+     </P
+><P
+>      This avoids cases where reconnection might fail due to omission of
+      relevant parameters, such as non-default SSL or GSS options.
+      Worse, the reconnection might succeed but not be encrypted as
+      intended, or be vulnerable to man-in-the-middle attacks that the
+      intended connection parameters would have prevented.
+      This is largely the same problem as just cited
+      for <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> et al,
+      although <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>'s behavior is more complex
+      since the user may intentionally override some connection
+      parameters.
+      (CVE-2020-25694)
+     </P
+></LI
+><LI
+><P
+>      Prevent <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>'s <TT
+CLASS="COMMAND"
+>\gset</TT
+>
+      command from modifying specially-treated variables (Noah Misch)
+     </P
+><P
+>      <TT
+CLASS="COMMAND"
+>\gset</TT
+> without a prefix would overwrite whatever
+      variables the server told it to.  Thus, a compromised server could
+      set specially-treated variables such as <TT
+CLASS="VARNAME"
+>PROMPT1</TT
+>,
+      giving the ability to execute arbitrary shell code in the user's
+      session.
+     </P
+><P
+>      The <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> Project thanks
+      Nick Cleaton for reporting this problem.
+      (CVE-2020-25696)
+     </P
+></LI
+><LI
+><P
+>      Prevent possible data loss from concurrent truncations of SLRU logs
+      (Noah Misch)
+     </P
+><P
+>      This rare problem would manifest in later <SPAN
+CLASS="QUOTE"
+>"apparent
+      wraparound"</SPAN
+> or <SPAN
+CLASS="QUOTE"
+>"could not access status of
+      transaction"</SPAN
+> errors.
+     </P
+></LI
+><LI
+><P
+>      Ensure that SLRU directories are properly fsync'd during checkpoints
+      (Thomas Munro)
+     </P
+><P
+>      This prevents possible data loss in a subsequent operating system
+      crash.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="COMMAND"
+>ALTER ROLE</TT
+> for users with
+      the <TT
+CLASS="LITERAL"
+>BYPASSRLS</TT
+> attribute (Tom Lane, Stephen Frost)
+     </P
+><P
+>      The <TT
+CLASS="LITERAL"
+>BYPASSRLS</TT
+> attribute is only allowed to be
+      changed by superusers, but other <TT
+CLASS="COMMAND"
+>ALTER ROLE</TT
+>
+      operations, such as password changes, should be allowed with only
+      ordinary permission checks.  The previous coding erroneously
+      restricted all changes on such a role to superusers.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of expressions in <TT
+CLASS="COMMAND"
+>CREATE TABLE LIKE</TT
+>
+      with inheritance (Tom Lane)
+     </P
+><P
+>      If a <TT
+CLASS="COMMAND"
+>CREATE TABLE</TT
+> command uses
+      both <TT
+CLASS="LITERAL"
+>LIKE</TT
+> and traditional inheritance, column
+      references in <TT
+CLASS="LITERAL"
+>CHECK</TT
+> constraints and expression
+      indexes that came from a <TT
+CLASS="LITERAL"
+>LIKE</TT
+> parent table tended
+      to get mis-numbered, resulting in wrong answers and/or bizarre error
+      messages.  The same could happen in <TT
+CLASS="LITERAL"
+>GENERATED</TT
+>
+      expressions, in branches that have that feature.
+     </P
+></LI
+><LI
+><P
+>      Fix off-by-one conversion of negative years to BC dates
+      in <CODE
+CLASS="FUNCTION"
+>to_date()</CODE
+>
+      and <CODE
+CLASS="FUNCTION"
+>to_timestamp()</CODE
+> (Dar Alathar-Yemen, Tom Lane)
+     </P
+><P
+>      Also, arrange for the combination of a negative year and an
+      explicit <SPAN
+CLASS="QUOTE"
+>"BC"</SPAN
+> marker to cancel out and produce AD.
+     </P
+></LI
+><LI
+><P
+>      Ensure that standby servers will archive WAL timeline history files
+      when <TT
+CLASS="VARNAME"
+>archive_mode</TT
+> is set
+      to <TT
+CLASS="LITERAL"
+>always</TT
+> (Grigory Smolkin, Fujii Masao)
+     </P
+><P
+>      This oversight could lead to failure of subsequent PITR recovery
+      attempts.
+     </P
+></LI
+><LI
+><P
+>      Avoid running <SPAN
+CLASS="SYSTEMITEM"
+>atexit</SPAN
+> handlers when exiting
+      due to SIGQUIT (Kyotaro Horiguchi, Tom Lane)
+     </P
+><P
+>      Most server processes followed this practice already, but the
+      archiver process was overlooked.  Backends that were still waiting
+      for a client startup packet got it wrong, too.
+     </P
+></LI
+><LI
+><P
+>      Avoid misoptimization of subquery qualifications that reference
+      apparently-constant grouping columns (Tom Lane)
+     </P
+><P
+>      A <SPAN
+CLASS="QUOTE"
+>"constant"</SPAN
+> subquery output column isn't really
+      constant if it is a grouping column that appears in only some of the
+      grouping sets.
+     </P
+></LI
+><LI
+><P
+>      Avoid failure when SQL function inlining changes the shape of a
+      potentially-hashable subplan comparison expression (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      While building or re-building an index, tolerate the appearance of
+      new HOT chains due to concurrent updates
+      (Anastasia Lubennikova, &Aacute;lvaro Herrera)
+     </P
+><P
+>      This oversight could lead to <SPAN
+CLASS="QUOTE"
+>"failed to find parent tuple for
+      heap-only tuple"</SPAN
+> errors.
+     </P
+></LI
+><LI
+><P
+>      Ensure that data is detoasted before being inserted into a BRIN
+      index (Tomas Vondra)
+     </P
+><P
+>      Index entries are not supposed to contain out-of-line TOAST
+      pointers, but BRIN didn't get that memo.  This could lead to errors
+      like <SPAN
+CLASS="QUOTE"
+>"missing chunk number 0 for toast value NNN"</SPAN
+>.
+      (If you are faced with such an error from an existing
+      index, <TT
+CLASS="COMMAND"
+>REINDEX</TT
+> should be enough to fix it.)
+     </P
+></LI
+><LI
+><P
+>      Handle concurrent desummarization correctly during BRIN index scans
+      (Alexander Lakhin, &Aacute;lvaro Herrera)
+     </P
+><P
+>      Previously, if a page range was desummarized at just the wrong time,
+      an index scan might falsely raise an error indicating index
+      corruption.
+     </P
+></LI
+><LI
+><P
+>      Fix rare <SPAN
+CLASS="QUOTE"
+>"lost saved point in index"</SPAN
+> errors in scans of
+      multicolumn GIN indexes (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix use-after-free hazard when an event trigger monitors
+      an <TT
+CLASS="COMMAND"
+>ALTER TABLE</TT
+> operation (Jehan-Guillaume de
+      Rorthais)
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect error message about inconsistent moving-aggregate
+      data types (Jeff Janes)
+     </P
+></LI
+><LI
+><P
+>      Avoid lockup when a parallel worker reports a very long error
+      message (Vignesh C)
+     </P
+></LI
+><LI
+><P
+>      Avoid unnecessary failure when transferring very large payloads
+      through shared memory queues (Markus Wanner)
+     </P
+></LI
+><LI
+><P
+>      Fix relation cache memory leaks with RLS policies (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix small memory leak when SIGHUP processing decides that a new GUC
+      variable value cannot be applied without a restart (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Make <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+> support arbitrary-length lines
+      in <TT
+CLASS="FILENAME"
+>.pgpass</TT
+> files (Tom Lane)
+     </P
+><P
+>      This is mostly useful to allow using very long security tokens as
+      passwords.
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+> for Windows,
+      call <CODE
+CLASS="FUNCTION"
+>WSAStartup()</CODE
+> once per process
+      and <CODE
+CLASS="FUNCTION"
+>WSACleanup()</CODE
+> not at all (Tom Lane,
+      Alexander Lakhin)
+     </P
+><P
+>      Previously, <SPAN
+CLASS="APPLICATION"
+>libpq</SPAN
+>
+      invoked <CODE
+CLASS="FUNCTION"
+>WSAStartup()</CODE
+> at connection start
+      and <CODE
+CLASS="FUNCTION"
+>WSACleanup()</CODE
+> at connection cleanup.
+      However, it appears that calling <CODE
+CLASS="FUNCTION"
+>WSACleanup()</CODE
+>
+      can interfere with other program operations; notably, we have
+      observed rare failures to emit expected output to stdout.  There
+      appear to be no ill effects from omitting the call, so do that.
+      (This also eliminates a performance issue from repeated DLL loads and
+      unloads when a program performs a series of database connections.)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> library's per-thread
+      initialization logic for Windows (Tom Lane, Alexander Lakhin)
+     </P
+><P
+>      Multi-threaded <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> applications could
+      suffer rare misbehavior due to incorrect locking.
+     </P
+></LI
+><LI
+><P
+>      On Windows, make <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+> read the output of
+      a backtick command in text mode, not binary mode (Tom Lane)
+     </P
+><P
+>      This ensures proper handling of newlines.
+     </P
+></LI
+><LI
+><P
+>      Ensure that <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> collects per-column
+      information about extension configuration tables (Fabr&iacute;zio de
+      Royes Mello, Tom Lane)
+     </P
+><P
+>      Failure to do this led to crashes when
+      specifying <TT
+CLASS="OPTION"
+>--inserts</TT
+>, or underspecified (though
+      usually correct) <TT
+CLASS="COMMAND"
+>COPY</TT
+> commands when
+      using <TT
+CLASS="COMMAND"
+>COPY</TT
+> to reload the tables' data.
+     </P
+></LI
+><LI
+><P
+>      Make <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+> check for pre-existence
+      of tablespace directories in the target cluster (Bruce Momjian)
+     </P
+></LI
+><LI
+><P
+>      Fix potential memory leak in <TT
+CLASS="FILENAME"
+>contrib/pgcrypto</TT
+>
+      (Michael Paquier)
+     </P
+></LI
+><LI
+><P
+>      Add check for an unlikely failure case
+      in <TT
+CLASS="FILENAME"
+>contrib/pgcrypto</TT
+> (Daniel Gustafsson)
+     </P
+></LI
+><LI
+><P
+>      Use <TT
+CLASS="LITERAL"
+>return</TT
+> not <TT
+CLASS="LITERAL"
+>exit()</TT
+> in
+      <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+>'s
+      test programs (Peter Eisentraut)
+     </P
+><P
+>      This avoids failures with pickier compilers.
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2020d for DST law changes in Fiji, Morocco, Palestine, the
+      Canadian Yukon, Macquarie Island, and Casey Station (Antarctica);
+      plus historical corrections for France, Hungary, Monaco, and
+      Palestine.
+     </P
+></LI
+><LI
+><P
+>      Sync our copy of the timezone library with IANA tzcode release 2020d
+      (Tom Lane)
+     </P
+><P
+>      This absorbs upstream's change of <SPAN
+CLASS="APPLICATION"
+>zic</SPAN
+>'s
+      default output option from <SPAN
+CLASS="QUOTE"
+>"fat"</SPAN
+>
+      to <SPAN
+CLASS="QUOTE"
+>"slim"</SPAN
+>.  That's just cosmetic for our purposes, as
+      we continue to select the <SPAN
+CLASS="QUOTE"
+>"fat"</SPAN
+> mode in pre-v13
+      branches.  This change also ensures
+      that <CODE
+CLASS="FUNCTION"
+>strftime()</CODE
+> does not
+      change <TT
+CLASS="VARNAME"
+>errno</TT
+> unless it fails.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-25.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-23.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.25</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.23</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

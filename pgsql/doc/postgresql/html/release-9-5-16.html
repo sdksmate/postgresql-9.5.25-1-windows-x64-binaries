@@ -1,0 +1,780 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.16</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.17"
+HREF="release-9-5-17.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.15"
+HREF="release-9-5-15.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.17"
+HREF="release-9-5-17.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.15"
+HREF="release-9-5-15.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-16"
+>E.10. Release 9.5.16</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2019-02-14</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.15.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128662"
+>E.10.1. Migration to Version 9.5.16</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you are upgrading from a version earlier than 9.5.13,
+    see <A
+HREF="release-9-5-13.html"
+>Section E.13</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128667"
+>E.10.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      By default, panic instead of retrying
+      after <CODE
+CLASS="FUNCTION"
+>fsync()</CODE
+> failure, to avoid possible data
+      corruption (Craig Ringer, Thomas Munro)
+     </P
+><P
+>      Some popular operating systems discard kernel data buffers when
+      unable to write them out, reporting this
+      as <CODE
+CLASS="FUNCTION"
+>fsync()</CODE
+> failure.  If we reissue
+      the <CODE
+CLASS="FUNCTION"
+>fsync()</CODE
+> request it will succeed, but in
+      fact the data has been lost, so continuing risks database
+      corruption.  By raising a panic condition instead, we can replay
+      from WAL, which may contain the only remaining copy of the data in
+      such a situation.  While this is surely ugly and inefficient, there
+      are few alternatives, and fortunately the case happens very rarely.
+     </P
+><P
+>      A new server parameter <A
+HREF="runtime-config-error-handling.html#GUC-DATA-SYNC-RETRY"
+>data_sync_retry</A
+>
+      has been added to control this; if you are certain that your
+      kernel does not discard dirty data buffers in such scenarios,
+      you can set <TT
+CLASS="VARNAME"
+>data_sync_retry</TT
+>
+      to <TT
+CLASS="LITERAL"
+>on</TT
+> to restore the old behavior.
+     </P
+></LI
+><LI
+><P
+>      Include each major release branch's release notes in the
+      documentation for only that branch, rather than that branch and all
+      later ones (Tom Lane)
+     </P
+><P
+>      The duplication induced by the previous policy was getting out of
+      hand.  Our plan is to provide a full archive of release notes on
+      the project's web site, but not duplicate it within each release.
+     </P
+></LI
+><LI
+><P
+>      Avoid possible deadlock when acquiring multiple buffer locks
+      (Nishant Fnu)
+     </P
+></LI
+><LI
+><P
+>      Avoid deadlock between hot-standby queries and replay of GIN index
+      page deletion (Alexander Korotkov)
+     </P
+></LI
+><LI
+><P
+>      Fix possible crashes in logical replication when index expressions
+      or predicates are in use (Peter Eisentraut)
+     </P
+></LI
+><LI
+><P
+>      Avoid useless and expensive logical decoding of TOAST data during a
+      table rewrite (Tomas Vondra)
+     </P
+></LI
+><LI
+><P
+>      Fix logic for stopping a subset of WAL senders when synchronous
+      replication is enabled (Paul Guo, Michael Paquier)
+     </P
+></LI
+><LI
+><P
+>      Avoid possibly writing an incorrect replica identity field in a
+      tuple deletion WAL record (Stas Kelvich)
+     </P
+></LI
+><LI
+><P
+>      Make the archiver prioritize WAL history files over WAL data files
+      while choosing which file to archive next (David Steele)
+     </P
+></LI
+><LI
+><P
+>      Fix possible crash in <TT
+CLASS="COMMAND"
+>UPDATE</TT
+> with a
+      multiple <TT
+CLASS="LITERAL"
+>SET</TT
+> clause using a
+      sub-<TT
+CLASS="LITERAL"
+>SELECT</TT
+> as source (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Avoid crash if <SPAN
+CLASS="APPLICATION"
+>libxml2</SPAN
+> returns a null
+      error message (Sergio Conde G&oacute;mez)
+     </P
+></LI
+><LI
+><P
+>      Fix spurious grouping-related parser errors caused by inconsistent
+      handling of collation assignment (Andrew Gierth)
+     </P
+><P
+>      In some cases, expressions that should be considered to match
+      were not seen as matching, if they included operations on collatable
+      data types.
+     </P
+></LI
+><LI
+><P
+>      Check whether the comparison function
+      underlying <CODE
+CLASS="FUNCTION"
+>LEAST()</CODE
+>
+      or <CODE
+CLASS="FUNCTION"
+>GREATEST()</CODE
+> is leakproof, rather than just
+      assuming it is (Tom Lane)
+     </P
+><P
+>      Actual information leaks from btree comparison functions are
+      typically hard to provoke, but in principle they could happen.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect planning of queries in which a lateral reference must
+      be evaluated at a foreign table scan (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix corner-case underestimation of the cost of a merge join (Tom Lane)
+     </P
+><P
+>      The planner could prefer a merge join when the outer key range is
+      much smaller than the inner key range, even if there are so many
+      duplicate keys on the inner side that this is a poor choice.
+     </P
+></LI
+><LI
+><P
+>      Avoid O(N^2) planning time growth when a query contains many
+      thousand indexable clauses (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Improve <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+>'s handling of
+      concurrently-updated rows (Jeff Janes, Tom Lane)
+     </P
+><P
+>      Previously, rows deleted by an in-progress transaction were omitted
+      from <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+>'s sample, but this has been found to
+      lead to more inconsistency than including them would do.  In effect,
+      the sample now corresponds to an MVCC snapshot as
+      of <TT
+CLASS="COMMAND"
+>ANALYZE</TT
+>'s start time.
+     </P
+></LI
+><LI
+><P
+>      Make <TT
+CLASS="COMMAND"
+>TRUNCATE</TT
+> ignore inheritance child tables
+      that are temporary tables of other sessions (Amit Langote, Michael
+      Paquier)
+     </P
+><P
+>      This brings <TT
+CLASS="COMMAND"
+>TRUNCATE</TT
+> into line with the behavior
+      of other commands.  Previously, such cases usually ended in failure.
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="COMMAND"
+>TRUNCATE</TT
+> to update the statistics counters
+      for the right table (Tom Lane)
+     </P
+><P
+>      If the truncated table had a TOAST table, that table's counters were
+      reset instead.
+     </P
+></LI
+><LI
+><P
+>      Allow <TT
+CLASS="COMMAND"
+>UNLISTEN</TT
+> in hot-standby mode
+      (Shay Rojansky)
+     </P
+><P
+>      This is necessarily a no-op, because <TT
+CLASS="COMMAND"
+>LISTEN</TT
+>
+      isn't allowed in hot-standby mode; but allowing the dummy operation
+      simplifies session-state-reset logic in clients.
+     </P
+></LI
+><LI
+><P
+>      Fix missing role dependencies in some schema and data type
+      permissions lists (Tom Lane)
+     </P
+><P
+>      In some cases it was possible to drop a role to which permissions
+      had been granted.  This caused no immediate problem, but a
+      subsequent dump/reload or upgrade would fail, with symptoms
+      involving attempts to grant privileges to all-numeric role names.
+     </P
+></LI
+><LI
+><P
+>      Ensure relation caches are updated properly after renaming
+      constraints (Amit Langote)
+     </P
+></LI
+><LI
+><P
+>      Make autovacuum more aggressive about removing leftover temporary
+      tables, and also remove leftover temporary tables
+      during <TT
+CLASS="COMMAND"
+>DISCARD TEMP</TT
+> (&Aacute;lvaro Herrera)
+     </P
+><P
+>      This helps ensure that remnants from a crashed session are cleaned
+      up more promptly.
+     </P
+></LI
+><LI
+><P
+>      Prevent empty GIN index pages from being reclaimed too quickly,
+      causing failures of concurrent searches
+      (Andrey Borodin, Alexander Korotkov)
+     </P
+></LI
+><LI
+><P
+>      Fix edge-case failures in float-to-integer coercions (Andrew
+      Gierth, Tom Lane)
+     </P
+><P
+>      Values very slightly above the maximum valid integer value might not
+      be rejected, and then would overflow, producing the minimum valid
+      integer instead.  Also, values that should round to the minimum or
+      maximum integer value might be incorrectly rejected.
+     </P
+></LI
+><LI
+><P
+>      Disallow setting <TT
+CLASS="VARNAME"
+>client_min_messages</TT
+> higher
+      than <TT
+CLASS="LITERAL"
+>ERROR</TT
+> (Jonah Harris, Tom Lane)
+     </P
+><P
+>      Previously, it was possible to set this variable
+      to <TT
+CLASS="LITERAL"
+>FATAL</TT
+> or <TT
+CLASS="LITERAL"
+>PANIC</TT
+>, which had
+      the effect of suppressing transmission of ordinary error messages to
+      the client.  However, that's contrary to guarantees that are given
+      in the <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> wire protocol
+      specification, and it caused some clients to become very confused.
+      In released branches, fix this by silently treating such settings as
+      meaning <TT
+CLASS="LITERAL"
+>ERROR</TT
+> instead.  Version 12 and later will
+      reject those alternatives altogether.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>ecpglib</SPAN
+> to
+      use <CODE
+CLASS="FUNCTION"
+>uselocale()</CODE
+>
+      or <CODE
+CLASS="FUNCTION"
+>_configthreadlocale()</CODE
+> in preference
+      to <CODE
+CLASS="FUNCTION"
+>setlocale()</CODE
+> (Michael Meskes, Tom Lane)
+     </P
+><P
+>      Since <CODE
+CLASS="FUNCTION"
+>setlocale()</CODE
+> is not thread-local, and
+      might not even be thread-safe, the previous coding caused problems
+      in multi-threaded <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> applications.
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect results for numeric data passed through
+      an <SPAN
+CLASS="APPLICATION"
+>ecpg</SPAN
+> <ACRONYM
+CLASS="ACRONYM"
+>SQLDA</ACRONYM
+>
+      (SQL Descriptor Area) (Daisuke Higuchi)
+     </P
+><P
+>      Values with leading zeroes were not copied correctly.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>'s <TT
+CLASS="COMMAND"
+>\g</TT
+>
+      <TT
+CLASS="REPLACEABLE"
+><I
+>target</I
+></TT
+> meta-command to work
+      with <TT
+CLASS="COMMAND"
+>COPY TO STDOUT</TT
+>
+      (Daniel V&eacute;rit&eacute;)
+     </P
+><P
+>      Previously, the <TT
+CLASS="REPLACEABLE"
+><I
+>target</I
+></TT
+> option was
+      ignored, so that the copy data always went to the current query
+      output target.
+     </P
+></LI
+><LI
+><P
+>      Make <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>'s LaTeX output formats render
+      special characters properly (Tom Lane)
+     </P
+><P
+>      Backslash and some other ASCII punctuation characters were not
+      rendered correctly, leading to document syntax errors or wrong
+      characters in the output.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>'s handling of materialized
+      views with indirect dependencies on primary keys (Tom Lane)
+     </P
+><P
+>      This led to mis-labeling of such views' dump archive entries,
+      causing harmless warnings about <SPAN
+CLASS="QUOTE"
+>"archive items not in correct
+      section order"</SPAN
+>; less harmlessly, selective-restore options
+      depending on those labels, such as <TT
+CLASS="OPTION"
+>--section</TT
+>, might
+      misbehave.
+     </P
+></LI
+><LI
+><P
+>      Avoid null-pointer-dereference crash on some platforms
+      when <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>
+      or <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+> tries to report an error
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="FILENAME"
+>contrib/hstore</TT
+> to calculate correct hash
+      values for empty <TT
+CLASS="TYPE"
+>hstore</TT
+> values that were created in
+      version 8.4 or before (Andrew Gierth)
+     </P
+><P
+>      The previous coding did not give the same result as for an
+      empty <TT
+CLASS="TYPE"
+>hstore</TT
+> value created by a newer version, thus
+      potentially causing wrong results in hash joins or hash
+      aggregation.  It is advisable to reindex any hash indexes
+      built on <TT
+CLASS="TYPE"
+>hstore</TT
+> columns, if the table might contain
+      data that was originally stored as far back as 8.4 and was never
+      dumped/reloaded since then.
+     </P
+></LI
+><LI
+><P
+>      Avoid crashes and excessive runtime with large inputs
+      to <TT
+CLASS="FILENAME"
+>contrib/intarray</TT
+>'s <TT
+CLASS="LITERAL"
+>gist__int_ops</TT
+>
+      index support (Andrew Gierth)
+     </P
+></LI
+><LI
+><P
+>      Adjust <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+>'s selection of
+      threading-related compiler flags and libraries to match what
+      later <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> releases do (Tom Lane)
+     </P
+><P
+>      The coding previously used in the 9.4 and 9.5 branches fails
+      outright on some newer platforms, so sync it with what 9.6 and later
+      have been doing.
+     </P
+></LI
+><LI
+><P
+>      Support new Makefile
+      variables <TT
+CLASS="LITERAL"
+>PG_CFLAGS</TT
+>, <TT
+CLASS="LITERAL"
+>PG_CXXFLAGS</TT
+>,
+      and <TT
+CLASS="LITERAL"
+>PG_LDFLAGS</TT
+> in <SPAN
+CLASS="APPLICATION"
+>pgxs</SPAN
+>
+      builds (Christoph Berg)
+     </P
+><P
+>      This simplifies customization of extension build processes.
+     </P
+></LI
+><LI
+><P
+>      Fix Perl-coded build scripts to not
+      assume <SPAN
+CLASS="QUOTE"
+>"<TT
+CLASS="LITERAL"
+>.</TT
+>"</SPAN
+> is in the search path,
+      since recent Perl versions don't include that (Andrew Dunstan)
+     </P
+></LI
+><LI
+><P
+>      Fix server command-line option parsing problems on OpenBSD (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2018i for DST law changes in Kazakhstan, Metlakatla, and Sao
+      Tome and Principe.  Kazakhstan's Qyzylorda zone is split in two,
+      creating a new zone Asia/Qostanay, as some areas did not change UTC
+      offset.  Historical corrections for Hong Kong and numerous Pacific
+      islands.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-17.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-15.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.17</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.15</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

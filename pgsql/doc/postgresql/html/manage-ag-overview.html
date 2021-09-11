@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Overview</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Managing Databases"
+HREF="managing-databases.html"><LINK
+REL="PREVIOUS"
+TITLE="Managing Databases"
+HREF="managing-databases.html"><LINK
+REL="NEXT"
+TITLE="Creating a Database"
+HREF="manage-ag-createdb.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Managing Databases"
+HREF="managing-databases.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="managing-databases.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 21. Managing Databases</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Creating a Database"
+HREF="manage-ag-createdb.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="MANAGE-AG-OVERVIEW"
+>21.1. Overview</A
+></H1
+><P
+>   A small number of objects, like role, database, and tablespace
+   names, are defined at the cluster level and stored in the
+   <TT
+CLASS="LITERAL"
+>pg_global</TT
+> tablespace.  Inside the cluster are
+   multiple databases, which are isolated from each other but can access
+   cluster-level objects.  Inside each database are multiple schemas,
+   which contain objects like tables and functions.  So the full hierarchy
+   is: cluster, database, schema, table (or some other kind of object,
+   such as a function).
+  </P
+><P
+>   When connecting to the database server, a client must specify the
+   database name in its connection request.
+   It is not possible to access more than one database per
+   connection. However, clients can open multiple connections to
+   the same database, or different databases.
+   Database-level security has two components: access control
+   (see <A
+HREF="auth-pg-hba-conf.html"
+>Section 19.1</A
+>), managed at the
+   connection level, and authorization control
+   (see <A
+HREF="ddl-priv.html"
+>Section 5.6</A
+>), managed via the grant system.
+   Foreign data wrappers (see <A
+HREF="postgres-fdw.html"
+>postgres_fdw</A
+>)
+   allow for objects within one database to act as proxies for objects in
+   other database or clusters.
+   The older dblink module (see <A
+HREF="dblink.html"
+>dblink</A
+>) provides a similar capability.
+   By default, all users can connect to all databases using all connection methods.
+  </P
+><P
+>   If one <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> server cluster is planned to contain
+   unrelated projects or users that should be, for the most part, unaware
+   of each other, it is recommended to put them into separate databases and
+   adjust authorizations and access controls accordingly.
+   If the projects or users are interrelated, and thus should be able to use
+   each other's resources, they should be put in the same database but probably
+   into separate schemas;  this provides a modular structure with namespace
+   isolation and authorization control.
+   More information about managing schemas is in <A
+HREF="ddl-schemas.html"
+>Section 5.8</A
+>.
+  </P
+><P
+>   While multiple databases can be created within a single cluster, it is advised
+   to consider carefully whether the benefits outweigh the risks and limitations.
+   In particular, the impact that having a shared WAL (see <A
+HREF="wal.html"
+>Chapter 29</A
+>)
+   has on backup and recovery options. While individual databases in the cluster
+   are isolated when considered from the user's perspective, they are closely bound
+   from the database administrator's point-of-view.
+  </P
+><P
+>   Databases are created with the <TT
+CLASS="COMMAND"
+>CREATE DATABASE</TT
+> command
+   (see <A
+HREF="manage-ag-createdb.html"
+>Section 21.2</A
+>) and destroyed with the
+   <TT
+CLASS="COMMAND"
+>DROP DATABASE</TT
+> command
+   (see <A
+HREF="manage-ag-dropdb.html"
+>Section 21.5</A
+>).
+   To determine the set of existing databases, examine the
+   <TT
+CLASS="STRUCTNAME"
+>pg_database</TT
+> system catalog, for example
+</P><PRE
+CLASS="SYNOPSIS"
+>SELECT datname FROM pg_database;</PRE
+><P>
+   The <A
+HREF="app-psql.html"
+><SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+></A
+> program's <TT
+CLASS="LITERAL"
+>\l</TT
+> meta-command
+   and <TT
+CLASS="OPTION"
+>-l</TT
+> command-line option are also useful for listing the
+   existing databases.
+  </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>    The <ACRONYM
+CLASS="ACRONYM"
+>SQL</ACRONYM
+> standard calls databases <SPAN
+CLASS="QUOTE"
+>"catalogs"</SPAN
+>, but there
+    is no difference in practice.
+   </P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="managing-databases.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="manage-ag-createdb.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Managing Databases</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="managing-databases.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Creating a Database</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

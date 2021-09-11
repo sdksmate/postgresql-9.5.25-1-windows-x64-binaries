@@ -1,0 +1,429 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.12</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.13"
+HREF="release-9-5-13.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.11"
+HREF="release-9-5-11.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.13"
+HREF="release-9-5-13.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.11"
+HREF="release-9-5-11.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-12"
+>E.14. Release 9.5.12</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2018-03-01</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.11.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129400"
+>E.14.1. Migration to Version 9.5.12</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you run an installation in which not all users are mutually
+    trusting, or if you maintain an application or extension that is
+    intended for use in arbitrary situations, it is strongly recommended
+    that you read the documentation changes described in the first changelog
+    entry below, and take suitable steps to ensure that your installation or
+    code is secure.
+   </P
+><P
+>    Also, the changes described in the second changelog entry below may
+    cause functions used in index expressions or materialized views to fail
+    during auto-analyze, or when reloading from a dump.  After upgrading,
+    monitor the server logs for such problems, and fix affected functions.
+   </P
+><P
+>    Also, if you are upgrading from a version earlier than 9.5.10,
+    see <A
+HREF="release-9-5-10.html"
+>Section E.16</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN129407"
+>E.14.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Document how to configure installations and applications to guard
+      against search-path-dependent trojan-horse attacks from other users
+      (Noah Misch)
+     </P
+><P
+>      Using a <TT
+CLASS="VARNAME"
+>search_path</TT
+> setting that includes any
+      schemas writable by a hostile user enables that user to capture
+      control of queries and then run arbitrary SQL code with the
+      permissions of the attacked user.  While it is possible to write
+      queries that are proof against such hijacking, it is notationally
+      tedious, and it's very easy to overlook holes.  Therefore, we now
+      recommend configurations in which no untrusted schemas appear in
+      one's search path.  Relevant documentation appears in
+      <A
+HREF="ddl-schemas.html#DDL-SCHEMAS-PATTERNS"
+>Section 5.8.6</A
+> (for database administrators and users),
+      <A
+HREF="libpq-connect.html"
+>Section 31.1</A
+> (for application authors),
+      <A
+HREF="extend-extensions.html#EXTEND-EXTENSIONS-SECURITY"
+>Section 35.15.5</A
+>  (for extension authors), and
+      <A
+HREF="sql-createfunction.html"
+>CREATE FUNCTION</A
+> (for authors
+      of <TT
+CLASS="LITERAL"
+>SECURITY DEFINER</TT
+> functions).
+      (CVE-2018-1058)
+     </P
+></LI
+><LI
+><P
+>      Avoid use of insecure <TT
+CLASS="VARNAME"
+>search_path</TT
+> settings
+      in <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> and other client programs
+      (Noah Misch, Tom Lane)
+     </P
+><P
+>      <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>,
+      <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>,
+      <SPAN
+CLASS="APPLICATION"
+>vacuumdb</SPAN
+> and
+      other <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+>-provided applications were
+      themselves vulnerable to the type of hijacking described in the previous
+      changelog entry; since these applications are commonly run by
+      superusers, they present particularly attractive targets.  To make them
+      secure whether or not the installation as a whole has been secured,
+      modify them to include only the <TT
+CLASS="STRUCTNAME"
+>pg_catalog</TT
+>
+      schema in their <TT
+CLASS="VARNAME"
+>search_path</TT
+> settings.
+      Autovacuum worker processes now do the same, as well.
+     </P
+><P
+>      In cases where user-provided functions are indirectly executed by
+      these programs &mdash; for example, user-provided functions in index
+      expressions &mdash; the tighter <TT
+CLASS="VARNAME"
+>search_path</TT
+> may
+      result in errors, which will need to be corrected by adjusting those
+      user-provided functions to not assume anything about what search path
+      they are invoked under.  That has always been good practice, but now
+      it will be necessary for correct behavior.
+      (CVE-2018-1058)
+     </P
+></LI
+><LI
+><P
+>      Fix misbehavior of concurrent-update rechecks with CTE references
+      appearing in subplans (Tom Lane)
+     </P
+><P
+>      If a CTE (<TT
+CLASS="LITERAL"
+>WITH</TT
+> clause reference) is used in an
+      InitPlan or SubPlan, and the query requires a recheck due to trying
+      to update or lock a concurrently-updated row, incorrect results could
+      be obtained.
+     </P
+></LI
+><LI
+><P
+>      Fix planner failures with overlapping mergejoin clauses in an outer
+      join (Tom Lane)
+     </P
+><P
+>      These mistakes led to <SPAN
+CLASS="QUOTE"
+>"left and right pathkeys do not match in
+      mergejoin"</SPAN
+> or <SPAN
+CLASS="QUOTE"
+>"outer pathkeys do not match
+      mergeclauses"</SPAN
+> planner errors in corner cases.
+     </P
+></LI
+><LI
+><P
+>      Repair <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>'s failure to
+      preserve <TT
+CLASS="STRUCTFIELD"
+>relfrozenxid</TT
+> for materialized
+      views (Tom Lane, Andres Freund)
+     </P
+><P
+>      This oversight could lead to data corruption in materialized views
+      after an upgrade, manifesting as <SPAN
+CLASS="QUOTE"
+>"could not access status of
+      transaction"</SPAN
+> or <SPAN
+CLASS="QUOTE"
+>"found xmin from before
+      relfrozenxid"</SPAN
+> errors.  The problem would be more likely to
+      occur in seldom-refreshed materialized views, or ones that were
+      maintained only with <TT
+CLASS="COMMAND"
+>REFRESH MATERIALIZED VIEW
+      CONCURRENTLY</TT
+>.
+     </P
+><P
+>      If such corruption is observed, it can be repaired by refreshing the
+      materialized view (without <TT
+CLASS="LITERAL"
+>CONCURRENTLY</TT
+>).
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect reporting of PL/Python function names in
+      error <TT
+CLASS="LITERAL"
+>CONTEXT</TT
+> stacks (Tom Lane)
+     </P
+><P
+>      An error occurring within a nested PL/Python function call (that is,
+      one reached via a SPI query from another PL/Python function) would
+      result in a stack trace showing the inner function's name twice,
+      rather than the expected results.  Also, an error in a nested
+      PL/Python <TT
+CLASS="LITERAL"
+>DO</TT
+> block could result in a null pointer
+      dereference crash on some platforms.
+     </P
+></LI
+><LI
+><P
+>      Allow <TT
+CLASS="FILENAME"
+>contrib/auto_explain</TT
+>'s
+      <TT
+CLASS="VARNAME"
+>log_min_duration</TT
+> setting to range up
+      to <TT
+CLASS="LITERAL"
+>INT_MAX</TT
+>, or about 24 days instead of 35 minutes
+      (Tom Lane)
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-13.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-11.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.13</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.11</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

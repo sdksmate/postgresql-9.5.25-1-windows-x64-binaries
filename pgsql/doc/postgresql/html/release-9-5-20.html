@@ -1,0 +1,1050 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Release 9.5.20</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.25 Documentation"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Release Notes"
+HREF="release.html"><LINK
+REL="PREVIOUS"
+TITLE="Release 9.5.21"
+HREF="release-9-5-21.html"><LINK
+REL="NEXT"
+TITLE="Release 9.5.19"
+HREF="release-9-5-19.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=ISO-8859-1"><META
+NAME="creation"
+CONTENT="2021-02-08T22:15:06"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.25 Documentation</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="Release 9.5.21"
+HREF="release-9-5-21.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>Appendix E. Release Notes</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="Release 9.5.19"
+HREF="release-9-5-19.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RELEASE-9-5-20"
+>E.6. Release 9.5.20</A
+></H1
+><DIV
+CLASS="FORMALPARA"
+><P
+><B
+>Release date: </B
+>2019-11-14</P
+></DIV
+><P
+>   This release contains a variety of fixes from 9.5.19.
+   For information about new features in the 9.5 major release, see
+   <A
+HREF="release-9-5.html"
+>Section E.26</A
+>.
+  </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128074"
+>E.6.1. Migration to Version 9.5.20</A
+></H2
+><P
+>    A dump/restore is not required for those running 9.5.X.
+   </P
+><P
+>    However, if you use the <TT
+CLASS="FILENAME"
+>contrib/intarray</TT
+>
+    extension with a GiST index, and you rely on indexed searches
+    for the <TT
+CLASS="LITERAL"
+>&lt;@</TT
+> operator, see the entry below
+    about that.
+   </P
+><P
+>    Also, if you are upgrading from a version earlier than 9.5.13,
+    see <A
+HREF="release-9-5-13.html"
+>Section E.13</A
+>.
+   </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN128082"
+>E.6.2. Changes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>      Disallow changing a multiply-inherited column's type if not all
+      parent tables were changed (Tom Lane)
+     </P
+><P
+>      Previously, this was allowed, whereupon queries on the
+      now-out-of-sync parent would fail.
+     </P
+></LI
+><LI
+><P
+>      Prevent <TT
+CLASS="COMMAND"
+>VACUUM</TT
+> from trying to freeze
+      an old multixact ID involving a still-running transaction
+      (Nathan Bossart, Jeremy Schneider)
+     </P
+><P
+>      This case would lead to <TT
+CLASS="COMMAND"
+>VACUUM</TT
+> failing until the
+      old transaction terminates.
+     </P
+></LI
+><LI
+><P
+>      Ensure that offset expressions in <TT
+CLASS="LITERAL"
+>WINDOW</TT
+> clauses
+      are processed when a query's expressions are manipulated (Andrew Gierth)
+     </P
+><P
+>      This oversight could result in assorted failures when the offsets
+      are nontrivial expressions.  One example is that a function
+      parameter reference in such an expression would fail if the function
+      was inlined.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of whole-row variables in <TT
+CLASS="LITERAL"
+>WITH CHECK
+      OPTION</TT
+> expressions and row-level-security policy expressions
+      (Andres Freund)
+     </P
+><P
+>      Previously, such usage might result in bogus errors about row type
+      mismatches.
+     </P
+></LI
+><LI
+><P
+>      Avoid postmaster failure if a parallel query requests a background
+      worker when no postmaster child process array slots remain free
+      (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Prevent possible double-free if a <TT
+CLASS="LITERAL"
+>BEFORE UPDATE</TT
+>
+      trigger returns the old tuple as-is, and it is not the last such
+      trigger (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      Provide a relevant error context line when an error occurs while
+      setting GUC parameters during parallel worker startup (Thomas Munro)
+     </P
+></LI
+><LI
+><P
+>      In serializable mode, ensure that row-level predicate locks are
+      acquired on the correct version of the row (Thomas Munro, Heikki
+      Linnakangas)
+     </P
+><P
+>      If the visible version of the row is HOT-updated, the lock might be
+      taken on its now-dead predecessor, resulting in subtle failures to
+      guarantee serialization.
+     </P
+></LI
+><LI
+><P
+>      Ensure that <CODE
+CLASS="FUNCTION"
+>fsync()</CODE
+> is applied only to files
+      that are opened read/write (Andres Freund, Michael Paquier)
+     </P
+><P
+>      Some code paths tried to do this after opening a file read-only,
+      but on some platforms that causes <SPAN
+CLASS="QUOTE"
+>"bad file descriptor"</SPAN
+>
+      or similar errors.
+     </P
+></LI
+><LI
+><P
+>      Allow encoding conversion to succeed on longer strings than before
+      (&Aacute;lvaro Herrera, Tom Lane)
+     </P
+><P
+>      Previously, there was a hard limit of 0.25GB on the input string,
+      but now it will work as long as the converted output is not over 1GB.
+     </P
+></LI
+><LI
+><P
+>      Allow <CODE
+CLASS="FUNCTION"
+>repalloc()</CODE
+> to give back space when a
+      large chunk is reduced in size (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Ensure that temporary WAL and history files are removed at the end
+      of archive recovery (Sawada Masahiko)
+     </P
+></LI
+><LI
+><P
+>      Avoid failure in archive recovery
+      if <TT
+CLASS="VARNAME"
+>recovery_min_apply_delay</TT
+> is enabled
+      (Fujii Masao)
+     </P
+><P
+>      <TT
+CLASS="VARNAME"
+>recovery_min_apply_delay</TT
+> is not typically used in
+      this configuration, but it should work.
+     </P
+></LI
+><LI
+><P
+>      Avoid unwanted delay during shutdown of a logical replication
+      walsender (Craig Ringer, &Aacute;lvaro Herrera)
+     </P
+></LI
+><LI
+><P
+>      Correctly time-stamp replication messages for logical
+      decoding (Jeff Janes)
+     </P
+><P
+>      This oversight resulted, for example,
+      in <TT
+CLASS="STRUCTNAME"
+>pg_stat_subscription</TT
+>.<TT
+CLASS="STRUCTFIELD"
+>last_msg_send_time</TT
+>
+      usually reading as NULL.
+     </P
+></LI
+><LI
+><P
+>      In logical decoding, ensure that sub-transactions are correctly
+      accounted for when reconstructing a snapshot (Masahiko Sawada)
+     </P
+><P
+>      This error leads to assertion failures; it's unclear whether any
+      bad effects exist in production builds.
+     </P
+></LI
+><LI
+><P
+>      Fix race condition during backend exit, when the backend process has
+      previously waited for synchronous replication to occur (Dongming Liu)
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="COMMAND"
+>ALTER SYSTEM</TT
+> to cope with duplicate entries
+      in <TT
+CLASS="FILENAME"
+>postgresql.auto.conf</TT
+> (Ian Barwick)
+     </P
+><P
+>      <TT
+CLASS="COMMAND"
+>ALTER SYSTEM</TT
+> itself will not generate such a state,
+      but external tools that modify <TT
+CLASS="FILENAME"
+>postgresql.auto.conf</TT
+>
+      could do so.  Duplicate entries for the target variable will now be
+      removed, and then the new setting (if any) will be appended at the end.
+     </P
+></LI
+><LI
+><P
+>      Reject include directives with empty file names in configuration
+      files, and report include-file recursion more clearly
+      (Ian Barwick, Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Avoid logging complaints about abandoned connections when using PAM
+      authentication (Tom Lane)
+     </P
+><P
+>      libpq-based clients will typically make two connection attempts when
+      a password is required, since they don't prompt their user for a
+      password until their first connection attempt fails.  Therefore the
+      server is coded not to generate useless log spam when a client
+      closes the connection upon being asked for a password.  However,
+      the PAM authentication code hadn't gotten that memo, and would
+      generate several messages about a phantom authentication failure.
+     </P
+></LI
+><LI
+><P
+>      Fix some cases where an incomplete date specification is not
+      detected in <TT
+CLASS="TYPE"
+>time with time zone</TT
+> input (Alexander Lakhin)
+     </P
+><P
+>      If a time zone with a time-varying UTC offset is specified, then a
+      date must be as well, so that the offset can be resolved.  Depending
+      on the syntax used, this check was not enforced in some cases,
+      allowing bogus output to be produced.
+     </P
+></LI
+><LI
+><P
+>      Fix misbehavior of <CODE
+CLASS="FUNCTION"
+>bitshiftright()</CODE
+> (Tom Lane)
+     </P
+><P
+>      The bitstring right shift operator failed to zero out padding space
+      that exists in the last byte of the result when the bitstring length
+      is not a multiple of 8.  While invisible to most operations, any
+      nonzero bits there would result in unexpected comparison behavior,
+      since bitstring comparisons don't bother to ignore the extra bits,
+      expecting them to always be zero.
+     </P
+><P
+>      If you have inconsistent data as a result of saving the output
+      of <CODE
+CLASS="FUNCTION"
+>bitshiftright()</CODE
+> in a table, it's possible to
+      fix it with something like
+</P><PRE
+CLASS="PROGRAMLISTING"
+>UPDATE mytab SET bitcol = ~(~bitcol) WHERE bitcol != ~(~bitcol);</PRE
+><P>
+     </P
+></LI
+><LI
+><P
+>      Fix detection of edge-case integer overflow in interval
+      multiplication (Yuya Watari)
+     </P
+></LI
+><LI
+><P
+>      Fix incorrect compression logic for GIN posting lists
+      (Heikki Linnakangas)
+     </P
+><P
+>      A GIN posting list item can require 7 bytes if the distance between
+      adjacent indexed TIDs exceeds 16TB.  One step in the logic was out
+      of sync with that, and might try to write the value into a 6-byte
+      buffer.  In principle this could cause a stack overrun, but on most
+      architectures it's likely that the next byte would be unused
+      alignment padding, making the bug harmless.  In any case the bug
+      would be very difficult to hit.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of infinity, NaN, and NULL values in KNN-GiST
+      (Alexander Korotkov)
+     </P
+><P
+>      The query's output order could be wrong (different from a plain
+      sort's result) if some distances computed for non-null column values
+      are infinity or NaN.
+     </P
+></LI
+><LI
+><P
+>      Fix handling of searches for NULL in KNN-SP-GiST (Nikita Glukhov)
+     </P
+></LI
+><LI
+><P
+>      On Windows, recognize additional spellings of the <SPAN
+CLASS="QUOTE"
+>"Norwegian
+      (Bokm&aring;l)"</SPAN
+> locale name (Tom Lane)
+     </P
+></LI
+><LI
+><P
+>      Avoid compile failure if an ECPG client
+      includes <TT
+CLASS="FILENAME"
+>ecpglib.h</TT
+> while
+      having <TT
+CLASS="LITERAL"
+>ENABLE_NLS</TT
+> defined (Tom Lane)
+     </P
+><P
+>      This risk was created by a misplaced
+      declaration: <CODE
+CLASS="FUNCTION"
+>ecpg_gettext()</CODE
+> should not be
+      visible to client code.
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+>, resynchronize internal state
+      about the server after an unexpected connection loss and successful
+      reconnection (Peter Billen, Tom Lane)
+     </P
+><P
+>      Ordinarily this is unnecessary since the state would be the same
+      anyway.  But it can matter in corner cases, such as where the
+      connection might lead to one of several servers.  This change
+      causes <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+> to re-issue any interactive
+      messages that it would have issued at startup, for example about
+      whether SSL is in use.
+     </P
+></LI
+><LI
+><P
+>      Avoid platform-specific null pointer dereference
+      in <SPAN
+CLASS="APPLICATION"
+>psql</SPAN
+> (Quentin Rameau)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>'s handling of circular
+      dependencies in views (Tom Lane)
+     </P
+><P
+>      In some cases a view may depend on an object
+      that <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> needs to dump later than the
+      view; the most common example is that a query using <TT
+CLASS="LITERAL"
+>GROUP
+      BY</TT
+> on a primary-key column may be semantically invalid
+      without the primary key.  This is now handled by emitting a
+      dummy <TT
+CLASS="COMMAND"
+>CREATE VIEW</TT
+> command that just establishes
+      the view's column names and types, and then later
+      emitting <TT
+CLASS="COMMAND"
+>CREATE OR REPLACE VIEW</TT
+> with the full
+      view definition.  Previously, the dummy definition was actually
+      a <TT
+CLASS="COMMAND"
+>CREATE TABLE</TT
+> command, and this was
+      automagically converted to a view by a later <TT
+CLASS="COMMAND"
+>CREATE
+      RULE</TT
+> command.  The new approach has been used successfully
+      in <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> version 10 and later.  We
+      are back-patching it into older releases now because of reports that
+      the previous method causes bogus error messages about the view's
+      replica identity status.  This change also avoids problems when
+      trying to use the <TT
+CLASS="OPTION"
+>--clean</TT
+> option during a restore
+      involving such a view.
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+>, ensure stable output order
+      for similarly-named triggers and row-level-security policy objects
+      (Benjie Gillam)
+     </P
+><P
+>      Previously, if two triggers on different tables had the same names,
+      they would be sorted in OID-based order, which is less desirable
+      than sorting them by table name.  Likewise for RLS policies.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> to work again with pre-8.3
+      source servers (Tom Lane)
+     </P
+><P
+>      A previous fix caused <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> to always
+      try to query <TT
+CLASS="STRUCTNAME"
+>pg_opfamily</TT
+>, but that catalog
+      doesn't exist before version 8.3.
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>, treat
+      <TT
+CLASS="OPTION"
+>-f -</TT
+> as meaning <SPAN
+CLASS="QUOTE"
+>"output to stdout"</SPAN
+>
+      (&Aacute;lvaro Herrera)
+     </P
+><P
+>      This synchronizes <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>'s behavior
+      with some other applications, and in particular makes pre-v12 branches
+      act similarly to version 12's <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+>,
+      simplifying creation of dump/restore scripts that work across
+      multiple <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> versions.  Before this
+      change, <SPAN
+CLASS="APPLICATION"
+>pg_restore</SPAN
+> interpreted such a
+      switch as meaning <SPAN
+CLASS="QUOTE"
+>"output to a file
+      named <TT
+CLASS="FILENAME"
+>-</TT
+>"</SPAN
+>, but few people would want that.
+     </P
+></LI
+><LI
+><P
+>      Improve <SPAN
+CLASS="APPLICATION"
+>pg_upgrade</SPAN
+>'s checks for the use
+      of a data type that has changed representation, such
+      as <TT
+CLASS="TYPE"
+>line</TT
+> (Tomas Vondra)
+     </P
+><P
+>      The previous coding could be fooled by cases where the data type of
+      interest underlies a stored column of a domain or composite type.
+     </P
+></LI
+><LI
+><P
+>      Detect file read errors
+      during <SPAN
+CLASS="APPLICATION"
+>pg_basebackup</SPAN
+> (Jeevan Chalke)
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_rewind</SPAN
+> with an online source
+      cluster, disable timeouts, much
+      as <SPAN
+CLASS="APPLICATION"
+>pg_dump</SPAN
+> does (Alexander Kukushkin)
+     </P
+></LI
+><LI
+><P
+>      Fix failure in <SPAN
+CLASS="APPLICATION"
+>pg_waldump</SPAN
+> with
+      the <TT
+CLASS="OPTION"
+>-s</TT
+> option, when a continuation WAL record ends
+      exactly at a page boundary (Andrey Lepikhov)
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_waldump</SPAN
+>,
+      include the <TT
+CLASS="LITERAL"
+>newitemoff</TT
+> field in btree page split
+      records (Peter Geoghegan)
+     </P
+></LI
+><LI
+><P
+>      In <SPAN
+CLASS="APPLICATION"
+>pg_waldump</SPAN
+> with
+      the <TT
+CLASS="OPTION"
+>--bkp-details</TT
+> option, avoid emitting extra
+      newlines for WAL records involving full-page writes (Andres Freund)
+     </P
+></LI
+><LI
+><P
+>      Fix small memory leak in <SPAN
+CLASS="APPLICATION"
+>pg_waldump</SPAN
+>
+      (Andres Freund)
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>vacuumdb</SPAN
+> with a
+      high <TT
+CLASS="OPTION"
+>--jobs</TT
+> option to handle running out of file
+      descriptors better (Michael Paquier)
+     </P
+></LI
+><LI
+><P
+>      Fix <TT
+CLASS="FILENAME"
+>contrib/intarray</TT
+>'s GiST opclasses to not
+      fail for empty arrays with <TT
+CLASS="LITERAL"
+>&lt;@</TT
+> (Tom Lane)
+     </P
+><P
+>      A clause like <TT
+CLASS="LITERAL"
+><TT
+CLASS="REPLACEABLE"
+><I
+>array_column</I
+></TT
+>
+      &lt;@ <TT
+CLASS="REPLACEABLE"
+><I
+>constant_array</I
+></TT
+></TT
+> is
+      considered indexable, but the index search may not find empty array
+      values; of course, such entries should trivially match the search.
+     </P
+><P
+>      The only practical back-patchable fix for this requires
+      making <TT
+CLASS="LITERAL"
+>&lt;@</TT
+> index searches scan the whole index,
+      which is what this patch does.  This is unfortunate: it means that
+      the query performance is likely worse than a plain sequential scan
+      would be.
+     </P
+><P
+>      Applications whose performance is adversely impacted by this change
+      have a couple of options.  They could switch to a GIN index, which
+      doesn't have this bug, or they could replace
+      <TT
+CLASS="LITERAL"
+><TT
+CLASS="REPLACEABLE"
+><I
+>array_column</I
+></TT
+>
+      &lt;@ <TT
+CLASS="REPLACEABLE"
+><I
+>constant_array</I
+></TT
+></TT
+>
+      with <TT
+CLASS="LITERAL"
+><TT
+CLASS="REPLACEABLE"
+><I
+>array_column</I
+></TT
+>
+      &lt;@ <TT
+CLASS="REPLACEABLE"
+><I
+>constant_array</I
+></TT
+>
+      AND <TT
+CLASS="REPLACEABLE"
+><I
+>array_column</I
+></TT
+>
+      &amp;&amp; <TT
+CLASS="REPLACEABLE"
+><I
+>constant_array</I
+></TT
+></TT
+>.
+      That will provide about the same performance as before, and it will
+      find all non-empty subsets of the given constant array, which is all
+      that could reliably be expected of the query before.
+     </P
+></LI
+><LI
+><P
+>      Allow <TT
+CLASS="LITERAL"
+>configure --with-python</TT
+> to succeed when
+      only <TT
+CLASS="FILENAME"
+>python3</TT
+> or
+      only <TT
+CLASS="FILENAME"
+>python2</TT
+> can be found (Peter Eisentraut,
+      Tom Lane)
+     </P
+><P
+>      Search for <TT
+CLASS="FILENAME"
+>python</TT
+>,
+      then <TT
+CLASS="FILENAME"
+>python3</TT
+>,
+      then <TT
+CLASS="FILENAME"
+>python2</TT
+>, so
+      that <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+> can succeed in the
+      increasingly-more-common situation where there is no executable
+      named simply <TT
+CLASS="FILENAME"
+>python</TT
+>.  It's still possible to
+      override this choice by setting the <TT
+CLASS="ENVAR"
+>PYTHON</TT
+>
+      environment variable.
+     </P
+></LI
+><LI
+><P
+>      Fix <SPAN
+CLASS="APPLICATION"
+>configure</SPAN
+>'s test for presence of
+      libperl so that it works on recent Red Hat releases (Tom Lane)
+     </P
+><P
+>      Previously, it could fail if the user sets <TT
+CLASS="LITERAL"
+>CFLAGS</TT
+>
+      to <TT
+CLASS="LITERAL"
+>-O0</TT
+>.
+     </P
+></LI
+><LI
+><P
+>      Ensure correct code generation for spinlocks on PowerPC (Noah Misch)
+     </P
+><P
+>      The previous spinlock coding allowed the compiler to select register
+      zero for use with an assembly instruction that does not accept that
+      register, causing a build failure.  We have seen only one long-ago
+      report that matches this bug, but it could cause problems for people
+      trying to build modified <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+> code
+      or use atypical compiler options.
+     </P
+></LI
+><LI
+><P
+>      On PowerPC, avoid depending on the xlc
+      compiler's <CODE
+CLASS="FUNCTION"
+>__fetch_and_add()</CODE
+> function
+      (Noah Misch)
+     </P
+><P
+>      xlc 13 and newer interpret this function in a way incompatible with
+      our usage, resulting in an unusable build
+      of <SPAN
+CLASS="PRODUCTNAME"
+>PostgreSQL</SPAN
+>.  Fix by using custom
+      assembly code instead.
+     </P
+></LI
+><LI
+><P
+>      On AIX, don't use the compiler option <TT
+CLASS="OPTION"
+>-qsrcmsg</TT
+>
+      (Noah Misch)
+     </P
+><P
+>      This avoids an internal compiler error with xlc v16.1.0, with little
+      consequence other than changing the format of compiler error messages.
+     </P
+></LI
+><LI
+><P
+>      Fix MSVC build process to cope with spaces in the file path of
+      OpenSSL (Andrew Dunstan)
+     </P
+></LI
+><LI
+><P
+>      Update time zone data files to <SPAN
+CLASS="APPLICATION"
+>tzdata</SPAN
+>
+      release 2019c for DST law changes in Fiji and Norfolk Island, plus
+      historical corrections for Alberta, Austria, Belgium, British
+      Columbia, Cambodia, Hong Kong, Indiana (Perry County), Kaliningrad,
+      Kentucky, Michigan, Norfolk Island, South Korea, and Turkey.
+     </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="release-9-5-21.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="release-9-5-19.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Release 9.5.21</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="release.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Release 9.5.19</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
